@@ -229,7 +229,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp
 function byId(id){return S.ex.filter(function(e){return e.id===id})[0]}
 
 /* ---------- ui state ---------- */
-var U={tab:'today',date:(function(){var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)})(),open:null,target:'all',filter:'sched',q:'',showBackup:false,adding:false,pq:'',allHist:false,wk:weekOf(new Date())[0],wkOnly:false};
+var U={tab:'today',date:(function(){var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)})(),open:null,target:'all',filter:'sched',q:'',showBackup:false,adding:false,pq:'',allHist:false,wk:weekOf(new Date())[0]};
 var app=document.getElementById('app');
 var todayKey=dkey(new Date());
 
@@ -554,7 +554,6 @@ function weekModel(mon){
   var dates=weekOf(fromKey(mon));
   var did=function(e){return dates.some(function(k){return checked(k,e.id)>0})};
   var list=S.ex.filter(function(e){return e.freq!=='off'||did(e)});
-  if(U.wkOnly)list=list.filter(did);
   var sheets=[],pageNums=[];
   for(var pg=0;pg*14<S.ex.length;pg++){
     var rows=list.filter(function(e){return Math.floor(S.ex.indexOf(e)/14)===pg}).map(function(e){
@@ -640,7 +639,6 @@ function viewWeek(){
   h+='<div class="wknav noprint"><button class="btn" data-a="wkprev" aria-label="Previous week">‹</button><b>'+md(m.dates[0])+' – '+md(m.dates[4])+'</b><button class="btn" data-a="wknext" aria-label="Next week">›</button></div>';
   h+='<div class="field noprint"><label for="wkname">Name on the sheet</label><input id="wkname" data-a="wkname" value="'+esc(S.name||'')+'" autocomplete="name"></div>';
   var txt=summaryText(m);
-  h+='<label class="chk noprint"><input type="checkbox" id="wkonly" data-a="wkonly"'+(U.wkOnly?' checked':'')+'> Only show what I did (fewer, shorter pictures)</label>';
   h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send pictures of sheets</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wksave">Save pictures</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
   h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send pictures opens your phone\u2019s share sheet so you can pick Messages or Mail. You get one picture for each of your sheets.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
   h+='<div class="field noprint"><label for="wktext">What will be sent</label><textarea id="wktext" readonly rows="12">'+esc(txt)+'</textarea></div>';
@@ -696,7 +694,7 @@ app.addEventListener('click',function(ev){
   else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
-  else if(a.indexOf('wk')===0&&a!=='wkname'&&a!=='wkonly'){wkAction(a)}
+  else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
   else if(a==='day'){U.date=v;render()}
   else if(a==='open'){U.open=v;U.target='all';U._sheetScroll=0;render()}
   else if(a==='close'){U.open=null;U._sheetScroll=0;render()}
@@ -735,7 +733,6 @@ app.addEventListener('click',function(ev){
 });
 app.addEventListener('change',function(ev){
   var t=ev.target,a=t.getAttribute('data-a');
-  if(t.id==='wkonly'){U.wkOnly=t.checked;return render()}
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
   if(t.id==='photo'){return addPhoto(t.files&&t.files[0])}
