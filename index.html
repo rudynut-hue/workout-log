@@ -229,7 +229,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp
 function byId(id){return S.ex.filter(function(e){return e.id===id})[0]}
 
 /* ---------- ui state ---------- */
-var U={tab:'today',date:(function(){var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)})(),open:null,target:'all',filter:'sched',q:'',showBackup:false,adding:false,pq:'',allHist:false,wk:weekOf(new Date())[0]};
+var U={tab:'today',date:(function(){var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)})(),open:null,target:'all',filter:'sched',q:'',showBackup:false,adding:false,pq:'',allHist:false,wk:weekOf(new Date())[0],wkOnly:false};
 var app=document.getElementById('app');
 var todayKey=dkey(new Date());
 
@@ -544,7 +544,7 @@ var GORDER=['daily','mwf','tt','twice','once'];
 var LEGEND=['Every Day','3X A Week (M,W,F)','2X A Week (Tu,Th)','2X A Week  Pick Days','1X A Week  Pick Day'];
 var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(d)}
-function amountText(p){return (p.sets>1?p.sets+'X':'')+(p.reps||'')+(p.weighted&&p.weight!==''&&p.weight!=null?' @ '+p.weight+' lb':'')}
+function amountText(p){return (p.sets>1&&/^\d/.test(p.reps||'')?p.sets+'X':'')+(p.reps||'')+(p.weighted&&p.weight!==''&&p.weight!=null?' @ '+p.weight+' lb':'')}
 function cellText(e,k){
   var n=checked(k,e.id);if(!n)return '';
   var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay());
@@ -552,7 +552,9 @@ function cellText(e,k){
 }
 function weekModel(mon){
   var dates=weekOf(fromKey(mon));
-  var list=S.ex.filter(function(e){return e.freq!=='off'||dates.some(function(k){return checked(k,e.id)>0})});
+  var did=function(e){return dates.some(function(k){return checked(k,e.id)>0})};
+  var list=S.ex.filter(function(e){return e.freq!=='off'||did(e)});
+  if(U.wkOnly)list=list.filter(did);
   var sheets=[];
   for(var i=0;i<list.length;i+=14){
     sheets.push(list.slice(i,i+14).map(function(e){
@@ -584,16 +586,67 @@ function summaryText(m){
   });
   return L.join('\n').trim();
 }
+/* picture of the sheet, drawn on a canvas so it looks like the paper form */
+function wrapLines(ctx,text,w,maxLines){
+  var words=String(text).split(' '),lines=[],cur='';
+  words.forEach(function(wd){var t=cur?cur+' '+wd:wd;if(ctx.measureText(t).width>w&&cur){lines.push(cur);cur=wd}else cur=t});
+  if(cur)lines.push(cur);
+  if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/.{0,2}$/,'')+'\u2026'}
+  return lines;
+}
+function sheetImage(m,cb){
+  var CW=[310,120,150,150,150,150,150],PAD=14,GAP=26,SC=2,W=CW.reduce(function(a,b){return a+b},0);
+  var scratch=document.createElement('canvas').getContext('2d');
+  var FONT='15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',BOLD='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  var pages=m.sheets.map(function(rows){
+    var R=[];
+    R.push([{t:'Name',b:1},{t:S.name||''}].concat(LEGEND.map(function(t,i){return {t:t,f:GCOL[GORDER[i]],c:1}})));
+    R.push([{t:''},{t:'Date',b:1}].concat(m.dates.map(function(k){return {t:md(k),c:1}})));
+    R.push([{t:'Activity',b:1},{t:'Amount',b:1}].concat(DAYFULL.map(function(d){return {t:d,b:1,c:1}})));
+    rows.forEach(function(r){
+      var f=r.group?GCOL[r.group]:null;
+      R.push([{t:r.name,f:f},{t:r.amount,f:f}].concat(r.cells.map(function(t,j){return {t:t,f:r.group&&r.sched[j]?f:null,c:1}})));
+    });
+    R.forEach(function(row){
+      var mx=1;row.forEach(function(c,i){scratch.font=c.b?BOLD:FONT;c.lines=wrapLines(scratch,c.t,CW[i]-14,2);mx=Math.max(mx,c.lines.length)});
+      row.h=mx>1?46:32;
+    });
+    return R;
+  });
+  if(!pages.length){cb(null);return}
+  var H=PAD*2+pages.reduce(function(a,R){return a+R.reduce(function(x,r){return x+r.h},0)},0)+GAP*(pages.length-1);
+  var cv=document.createElement('canvas');cv.width=(W+PAD*2)*SC;cv.height=H*SC;
+  var ctx=cv.getContext('2d');ctx.scale(SC,SC);ctx.fillStyle='#fff';ctx.fillRect(0,0,W+PAD*2,H);
+  ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.textBaseline='middle';
+  var y=PAD;
+  pages.forEach(function(R){
+    R.forEach(function(row){
+      var x=PAD;
+      row.forEach(function(c,i){
+        if(c.f){ctx.fillStyle='#'+c.f;ctx.fillRect(x,y,CW[i],row.h)}
+        ctx.strokeRect(x+.5,y+.5,CW[i],row.h);
+        ctx.fillStyle='#000';ctx.font=c.b?BOLD:FONT;ctx.textAlign=c.c?'center':'left';
+        var n=c.lines.length,lh=17,top=y+row.h/2-(n-1)*lh/2;
+        c.lines.forEach(function(ln,li){ctx.fillText(ln,c.c?x+CW[i]/2:x+7,top+li*lh)});
+        x+=CW[i];
+      });
+      y+=row.h;
+    });
+    y+=GAP;
+  });
+  cv.toBlob(function(b){cb(b)},'image/png');
+}
 function viewWeek(){
   var m=weekModel(U.wk);
   var h='<div class="top noprint"><h1>Weekly sheet</h1><button class="btn" data-a="tab" data-v="progress">Back</button></div>';
   h+='<div class="wknav noprint"><button class="btn" data-a="wkprev" aria-label="Previous week">‹</button><b>'+md(m.dates[0])+' – '+md(m.dates[4])+'</b><button class="btn" data-a="wknext" aria-label="Next week">›</button></div>';
   h+='<div class="field noprint"><label for="wkname">Name on the sheet</label><input id="wkname" data-a="wkname" value="'+esc(S.name||'')+'" autocomplete="name"></div>';
   var txt=summaryText(m);
-  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wksend">Send</button><button class="btn" data-a="wkmail">Email</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wkcopy">Copy</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
-  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send opens your phone\u2019s share sheet so you can pick Messages or Mail.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
+  h+='<label class="chk noprint"><input type="checkbox" id="wkonly" data-a="wkonly"'+(U.wkOnly?' checked':'')+'> Only show what I did (shorter picture)</label>';
+  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send picture of sheet</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wksave">Save picture</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
+  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send picture opens your phone\u2019s share sheet so you can pick Messages or Mail. The picture looks like your paper sheet.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
   h+='<div class="field noprint"><label for="wktext">What will be sent</label><textarea id="wktext" readonly rows="12">'+esc(txt)+'</textarea></div>';
-  h+='<div class="hint noprint" style="margin-top:14px">Sheet layout, used when you tap Print sheet:</div>';
+  h+='<div class="hint noprint" style="margin-top:14px">What the picture and printout look like:</div>';
   h+=m.sheets.map(function(r){return '<div class="paper">'+sheetTable(r,m)+'</div>'}).join('');
   return h;
 }
@@ -611,6 +664,21 @@ function wkAction(a){
     catch(x){ta.select();wkSay('Text selected. Use Copy on your phone\u2019s menu.')}
   };
   if(a==='wkcopy')return copy();
+  if(a==='wkpic'||a==='wksave'){
+    var m2=weekModel(U.wk),nm='Workout-Week-'+m2.dates[0]+'.png';
+    wkSay('Making the picture...');
+    sheetImage(m2,function(blob){
+      if(!blob){wkSay('Nothing to draw for this week yet.');return}
+      var file=null;try{file=new File([blob],nm,{type:'image/png'})}catch(x){}
+      if(a==='wkpic'&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:subj}).then(function(){wkSay('Sent.')},function(){wkSay('Cancelled.')});return;
+      }
+      var url=URL.createObjectURL(blob),an=document.createElement('a');an.href=url;an.download=nm;document.body.appendChild(an);an.click();an.remove();
+      setTimeout(function(){URL.revokeObjectURL(url)},4000);
+      wkSay(a==='wkpic'?'This browser can\u2019t open the share sheet, so the picture was saved. Attach it to a text or email.':'Saved '+nm+'.');
+    });
+    return;
+  }
   if(a==='wksend'){
     if(navigator.share){navigator.share({title:subj,text:txt}).catch(function(){})}
     else copy();
@@ -627,7 +695,7 @@ app.addEventListener('click',function(ev){
   else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
-  else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
+  else if(a.indexOf('wk')===0&&a!=='wkname'&&a!=='wkonly'){wkAction(a)}
   else if(a==='day'){U.date=v;render()}
   else if(a==='open'){U.open=v;U.target='all';U._sheetScroll=0;render()}
   else if(a==='close'){U.open=null;U._sheetScroll=0;render()}
@@ -666,6 +734,7 @@ app.addEventListener('click',function(ev){
 });
 app.addEventListener('change',function(ev){
   var t=ev.target,a=t.getAttribute('data-a');
+  if(t.id==='wkonly'){U.wkOnly=t.checked;return render()}
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
   if(t.id==='photo'){return addPhoto(t.files&&t.files[0])}
