@@ -186,9 +186,9 @@ function defaults(){
     if(r.length===2){
       r[1].split('|').forEach(function(nm){
         var w = WEIGHTED.test(nm) && !NOTW.test(nm) ? 1 : 0;
-        out.push({id:'e'+(n++),name:nm,freq:r[0],plan:{sets:3,reps:'8-10',weight:'',weighted:w},ov:{}});
+        out.push({id:'e'+(n++),name:nm,freq:r[0],plan:{sets:3,reps:'8-10',weight:'',weighted:w,timed:0},ov:{}});
       });
-    } else out.push({id:'e'+(n++),name:r[0],freq:r[4],plan:{sets:r[1],reps:r[2],weight:'',weighted:r[3]},ov:{}});
+    } else out.push({id:'e'+(n++),name:r[0],freq:r[4],plan:{sets:r[1],reps:r[2],weight:'',weighted:r[3],timed:/min|sec/i.test(r[2])?1:0},ov:{}});
   });
   out.forEach(function(e,i){e.pg=Math.floor((i>=58?i+1:i)/14)});
   return out;
@@ -207,6 +207,7 @@ var PH = load(PKEY) || {};
   var gone=S.ex.filter(function(e){return e.name==='Dips'});
   gone.forEach(function(g){Object.keys(S.log).forEach(function(k){if(S.log[k][g.id]){delete S.log[k][g.id];if(!Object.keys(S.log[k]).length)delete S.log[k]}})});
   S.ex=S.ex.filter(function(e){return e.name!=='Dips'}); S.mig3=1; save(KEY,S); })();
+(function(){ if(S.mig4)return; S.ex.forEach(function(e){if(e.plan.timed==null)e.plan.timed=/\b(min|sec)\b/i.test(e.plan.reps||'')?1:0}); S.mig4=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -325,7 +326,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 17.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 19.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -362,7 +363,7 @@ function sheetHtml(){
     }).join('')+'</div>';
   h+='<div class="grid3"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+
-    '<div class="field"><label for="f-reps">Reps / time</label><input id="f-reps" data-a="pf" data-v="reps" value="'+esc(base.reps)+'" autocomplete="off"></div>';
+    (e.plan.timed?timeField(base.reps):'<div class="field"><label for="f-reps">Reps</label><input id="f-reps" data-a="pf" data-v="reps" value="'+esc(base.reps)+'" autocomplete="off"></div>');
   if(e.plan.weighted){
     var opts='<option value="">Not set</option>';
     for(var w=5;w<=300;w+=5)opts+='<option value="'+w+'"'+(String(base.weight)===String(w)?' selected':'')+'>'+w+' lb</option>';
@@ -373,11 +374,24 @@ function sheetHtml(){
     :'<div class="hint">Only changes '+DAYN[+tgt]+' of the week of '+md(wkm)+'.'+(wv[tgt]?' <button class="link" data-a="resetday">Undo this day</button>':'')+'</div>';
   else h+=tgt==='all'?'<div class="hint">Applies to every week, on every day unless a day has its own plan (marked with a yellow dot).</div>'
     :'<div class="hint">Changes '+DAYN[+tgt]+' in every week. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
+  h+='<label class="chk"><input type="checkbox" id="f-ut" data-a="ut"'+(e.plan.timed?' checked':'')+'> This exercise is timed (pick seconds or minutes)</label>';
   h+='<label class="chk"><input type="checkbox" id="f-uw" data-a="uw"'+(e.plan.weighted?' checked':'')+'> This exercise uses weight</label>';
   h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   h+='</div></div></div>';
   return h;
+}
+function timeField(cur){
+  function secLabel(n){var m=Math.floor(n/60),r=n%60;return m?(m+' min'+(r?' '+r+' sec':'')):r+' sec'}
+  var o='',secs=[],mins=[],n,all;
+  for(n=5;n<=180;n+=5)secs.push(secLabel(n));
+  for(n=5;n<=60;n+=5)mins.push(n+' min');
+  all=secs.concat(mins);
+  if(cur&&all.indexOf(cur)<0)o+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
+  else if(!cur)o+='<option value="" selected>Not set</option>';
+  function grp(t,l){return '<optgroup label="'+t+'">'+l.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('')+'</optgroup>'}
+  o+=grp('Seconds (up to 3 min)',secs)+grp('Minutes',mins);
+  return '<div class="field"><label for="f-reps">Time</label><select id="f-reps" data-a="pf" data-v="reps">'+o+'</select></div>';
 }
 function lastTime(e){
   var keys=Object.keys(S.log).filter(function(k){return k<U.date&&S.log[k][e.id]&&S.log[k][e.id].snap&&S.log[k][e.id].sets.some(Boolean)}).sort();
@@ -650,7 +664,7 @@ app.addEventListener('click',function(ev){
   else if(a==='addno'){U.adding=false;render()}
   else if(a==='addgo'){
     var nm=document.getElementById('newname').value.trim();
-    if(nm){S.ex.push({id:'e'+(S.next++),name:nm,freq:'off',plan:{sets:3,reps:'8-10',weight:'',weighted:WEIGHTED.test(nm)?1:0},ov:{}});U.adding=false;U.filter='off';U.q='';persist()}
+    if(nm){S.ex.push({id:'e'+(S.next++),name:nm,freq:'off',plan:{sets:3,reps:'8-10',weight:'',weighted:WEIGHTED.test(nm)?1:0,timed:0},ov:{}});U.adding=false;U.filter='off';U.q='';persist()}
     render();
   }
   else if(a==='gobackup'){U.tab='setup';U.showBackup=true;render();window.scrollTo(0,document.body.scrollHeight)}
@@ -677,6 +691,7 @@ app.addEventListener('change',function(ev){
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
   if(a==='freq'){byId(t.getAttribute('data-v')).freq=t.value;persist();keepSheet();return render()}
+  if(a==='ut'){byId(U.open).plan.timed=t.checked?1:0;persist();keepSheet();return render()}
   if(a==='uw'){byId(U.open).plan.weighted=t.checked?1:0;persist();keepSheet();return render()}
   if(a==='pf'){
     keepSheet();
