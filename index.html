@@ -538,7 +538,7 @@ function viewProgress(){
   if(!list.length)h+='<div class="empty">No exercises match.</div>';
   return h;
 }
-/* ---------- weekly sheet: preview, print, share, .xlsx ---------- */
+/* ---------- weekly sheet: preview, print, text and email ---------- */
 var GCOL={daily:'FFFF00',mwf:'FF9933',tt:'92D050',twice:'FF99FF',once:'66FFFF'};
 var GORDER=['daily','mwf','tt','twice','once'];
 var LEGEND=['Every Day','3X A Week (M,W,F)','2X A Week (Tu,Th)','2X A Week  Pick Days','1X A Week  Pick Day'];
@@ -584,91 +584,38 @@ function summaryText(m){
   });
   return L.join('\n').trim();
 }
-/* minimal .xlsx writer (zip without compression) so no library is needed */
-var CRCT=null;
-function crc32(b){if(!CRCT){CRCT=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CRCT[n]=c>>>0}}
-  var r=0xFFFFFFFF;for(var i=0;i<b.length;i++)r=CRCT[(r^b[i])&255]^(r>>>8);return (r^0xFFFFFFFF)>>>0}
-function zipStore(files){
-  var enc=new TextEncoder(),parts=[],cd=[],off=0,cdSize=0;
-  files.forEach(function(f){
-    var nm=enc.encode(f.n),d=enc.encode(f.d),crc=crc32(d);
-    var h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
-    h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);
-    parts.push(new Uint8Array(h.buffer),nm,d);
-    var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);
-    c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
-    cd.push(new Uint8Array(c.buffer),nm);off+=30+nm.length+d.length;cdSize+=46+nm.length;
-  });
-  var e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,off,true);
-  return new Blob(parts.concat(cd,[new Uint8Array(e.buffer)]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-}
-function xe(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function colL(i){return String.fromCharCode(65+i)}
-function buildXlsx(m){
-  var xfs=[],xmap={};
-  function xf(bold,fill,border,center){var key=[bold,fill,border,center].join();if(!(key in xmap)){xmap[key]=xfs.length;xfs.push([bold,fill,border,center])}return xmap[key]}
-  xf(0,0,0,0);
-  var fillIdx=function(g){var i=GORDER.indexOf(g);return i<0?0:i+2};
-  var sheetsXml=m.sheets.map(function(rows){
-    var R=[];
-    function row(n,cells){R.push('<row r="'+n+'">'+cells.map(function(c,i){
-      var ref=colL(i)+n,s=xf(c.b?1:0,c.f||0,1,c.center?1:0);
-      return c.t===''||c.t==null?'<c r="'+ref+'" s="'+s+'"/>':'<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xe(c.t)+'</t></is></c>';
-    }).join('')+'</row>')}
-    row(2,[{t:'Name',b:1},{t:S.name||''}].concat(LEGEND.map(function(t,i){return {t:t,f:fillIdx(GORDER[i]),center:1}})));
-    row(3,[{t:''},{t:'Date',b:1}].concat(m.dates.map(function(k){return {t:md(k),center:1}})));
-    row(4,[{t:'Activity',b:1},{t:'Amount',b:1}].concat(DAYFULL.map(function(d){return {t:d,b:1,center:1}})));
-    rows.forEach(function(r,i){
-      var f=fillIdx(r.group);
-      row(5+i,[{t:r.name,f:f},{t:r.amount,f:f}].concat(r.cells.map(function(t,j){return {t:t,f:r.group&&r.sched[j]?f:0,center:1}})));
-    });
-    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetFormatPr defaultRowHeight="18"/><cols><col min="1" max="1" width="42" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/><col min="3" max="7" width="22" customWidth="1"/></cols><sheetData>'+R.join('')+'</sheetData><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
-  });
-  if(!sheetsXml.length)sheetsXml=['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>'];
-  var N=sheetsXml.length,NS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
-  var fills='<fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+GORDER.map(function(g){return '<fill><patternFill patternType="solid"><fgColor rgb="FF'+GCOL[g]+'"/><bgColor indexed="64"/></patternFill></fill>'}).join('');
-  var side='<color auto="1"/>',bd='<border><left style="thin">'+side+'</left><right style="thin">'+side+'</right><top style="thin">'+side+'</top><bottom style="thin">'+side+'</bottom><diagonal/></border>';
-  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="'+NS+'"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="7">'+fills+'</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'+bd+'</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="'+xfs.length+'">'+
-    xfs.map(function(x){return '<xf numFmtId="0" fontId="'+x[0]+'" fillId="'+x[1]+'" borderId="'+x[2]+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"'+(x[3]?' horizontal="center"':'')+'/></xf>'}).join('')+
-    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
-  var files=[{n:'[Content_Types].xml',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheetsXml.map(function(_,i){return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'}).join('')+'</Types>'},
-   {n:'_rels/.rels',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
-   {n:'xl/workbook.xml',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="'+NS+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheetsXml.map(function(_,i){return '<sheet name="Sheet'+(i+1)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>'}).join('')+'</sheets></workbook>'},
-   {n:'xl/_rels/workbook.xml.rels',d:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheetsXml.map(function(_,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>'}).join('')+'<Relationship Id="rId'+(N+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
-   {n:'xl/styles.xml',d:styles}];
-  sheetsXml.forEach(function(x,i){files.push({n:'xl/worksheets/sheet'+(i+1)+'.xml',d:x})});
-  return zipStore(files);
-}
 function viewWeek(){
   var m=weekModel(U.wk);
   var h='<div class="top noprint"><h1>Weekly sheet</h1><button class="btn" data-a="tab" data-v="progress">Back</button></div>';
   h+='<div class="wknav noprint"><button class="btn" data-a="wkprev" aria-label="Previous week">‹</button><b>'+md(m.dates[0])+' – '+md(m.dates[4])+'</b><button class="btn" data-a="wknext" aria-label="Next week">›</button></div>';
   h+='<div class="field noprint"><label for="wkname">Name on the sheet</label><input id="wkname" data-a="wkname" value="'+esc(S.name||'')+'" autocomplete="name"></div>';
-  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wksend">Send file</button><button class="btn" data-a="wkmail">Email summary</button><button class="btn" data-a="wksms">Text summary</button><button class="btn" data-a="wkdl">Download</button><button class="btn" data-a="wkprint">Print</button></div>';
-  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send file opens your phone’s share sheet so you can pick Messages or Mail.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
+  var txt=summaryText(m);
+  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wksend">Send</button><button class="btn" data-a="wkmail">Email</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wkcopy">Copy</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
+  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send opens your phone\u2019s share sheet so you can pick Messages or Mail.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
+  h+='<div class="field noprint"><label for="wktext">What will be sent</label><textarea id="wktext" readonly rows="12">'+esc(txt)+'</textarea></div>';
+  h+='<div class="hint noprint" style="margin-top:14px">Sheet layout, used when you tap Print sheet:</div>';
   h+=m.sheets.map(function(r){return '<div class="paper">'+sheetTable(r,m)+'</div>'}).join('');
   return h;
 }
-function wkFile(){var m=weekModel(U.wk);return {m:m,name:'Workout-Week-'+m.dates[0]+'.xlsx',blob:buildXlsx(m)}}
 function wkSay(t){var e=document.getElementById('wkmsg');if(e)e.textContent=t}
 function wkAction(a){
-  var m=weekModel(U.wk);
+  var m=weekModel(U.wk),txt=summaryText(m),subj='Workout Log, week of '+md(m.dates[0]);
   if(a==='wkprev'){U.wk=shiftWeek(U.wk,-1);return render()}
   if(a==='wknext'){U.wk=shiftWeek(U.wk,1);return render()}
-  var subj='Workout Log, week of '+md(m.dates[0]);
-  if(a==='wkprint'){return window.print()}
-  if(a==='wkmail'){location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(summaryText(m));return}
-  if(a==='wksms'){location.href='sms:?&body='+encodeURIComponent(summaryText(m));return}
-  var f=wkFile(),file;
-  try{file=new File([f.blob],f.name,{type:f.blob.type})}catch(x){file=null}
-  if(a==='wksend'&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:subj,text:subj}).catch(function(){});return;
+  if(a==='wkprint')return window.print();
+  if(a==='wkmail'){location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(txt);return}
+  if(a==='wksms'){location.href='sms:?&body='+encodeURIComponent(txt);return}
+  var copy=function(){
+    var ta=document.getElementById('wktext');
+    try{navigator.clipboard.writeText(txt).then(function(){wkSay('Copied. Paste it into a text or email.')},function(){ta.select();wkSay('Text selected. Use Copy on your phone\u2019s menu.')})}
+    catch(x){ta.select();wkSay('Text selected. Use Copy on your phone\u2019s menu.')}
+  };
+  if(a==='wkcopy')return copy();
+  if(a==='wksend'){
+    if(navigator.share){navigator.share({title:subj,text:txt}).catch(function(){})}
+    else copy();
   }
-  var url=URL.createObjectURL(f.blob),an=document.createElement('a');an.href=url;an.download=f.name;document.body.appendChild(an);an.click();an.remove();
-  setTimeout(function(){URL.revokeObjectURL(url)},4000);
-  wkSay(a==='wksend'?'This browser can’t open the share sheet, so the file was downloaded. Attach it to a text or email.':'Downloaded '+f.name+'.');
 }
-
 /* ---------- events ---------- */
 function keepSheet(){var s=document.getElementById('sheet');U._sheetScroll=s?s.scrollTop:0}
 app.addEventListener('click',function(ev){

@@ -1,5 +1,5 @@
 // Caches the app on first visit so it opens with no signal. Bump VERSION to push an update.
-var VERSION='wl-v2';
+var VERSION='wl-v3';
 var CORE=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','icon-180.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(VERSION).then(function(c){return c.addAll(CORE)}).then(function(){return self.skipWaiting()}));
