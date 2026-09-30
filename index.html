@@ -88,55 +88,15 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .sh-head h2{font-size:1.8rem;line-height:1.05;overflow-wrap:anywhere}
 .x{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:44px;height:44px;flex:none;font-size:1.2rem}
-.pic{margin-block:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.pic img{display:block;width:100%;max-height:300px;object-fit:contain;background:#000}
-.pic .ph{padding:22px 16px;text-align:center;color:var(--muted)}
-.pic .acts{display:flex;gap:8px;flex-wrap:wrap;padding:10px;border-top:1px solid var(--line)}
-.pic .acts>*{flex:1 1 130px;text-align:center;text-decoration:none;color:var(--ink);display:flex;align-items:center;justify-content:center}
-.draw{display:block;width:100%;max-height:210px;padding:10px 8px 4px}
-.dr-b{stroke:var(--ink);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;fill:none}
-.dr-far{opacity:.4}
-.dr-h{stroke:var(--ink);stroke-width:3;fill:var(--surface)}
-.dr-p{fill:var(--accent);stroke:var(--ink);stroke-width:1.2}
-.dr-g{stroke:var(--muted);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.dr-t{fill:var(--muted);font:600 6.5px var(--body);text-anchor:middle}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-block:14px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
-.stat b{display:block;font-family:var(--display);font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
-.stat span{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
-.hist{margin-top:18px}
-.hist h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-.chart{display:block;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
-.ch-l{stroke:var(--line);stroke-width:1}
-.ch-s{stroke:var(--ink);stroke-width:2;fill:none;stroke-linejoin:round;stroke-linecap:round}
-.ch-d{fill:var(--ink)}
-.ch-e{fill:var(--accent);stroke:var(--ink);stroke-width:1.5}
-.ch-t{fill:var(--muted);font:600 8px var(--body)}
-.hrow{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;font-variant-numeric:tabular-nums}
-.hrow+.hrow{margin-top:6px}
-.hrow span:last-child{color:var(--muted);white-space:nowrap}
-.up{color:var(--ok);font-weight:600}
-.wknav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-block:14px;font-variant-numeric:tabular-nums}
-.wknav b{font-family:var(--display);font-size:1.4rem}
-.wknav .btn{width:56px;font-size:1.3rem}
-.wkbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-block:12px}
-.wkbtn .btn:first-child{grid-column:1/-1}
-.paper{background:#fff;color:#000;border:1px solid var(--line);border-radius:8px;overflow-x:auto;margin-top:14px}
-.paper table{border-collapse:collapse;font:12px/1.3 var(--body);min-width:620px;width:100%}
-.paper td{border:1px solid #333;padding:4px 6px;vertical-align:top}
-.g-daily{background:#FFFF00}.g-mwf{background:#FF9933}.g-tt{background:#92D050}.g-twice{background:#FF99FF}.g-once{background:#66FFFF}
-@media print{
-  .nav,.noprint{display:none!important}
-  body{background:#fff;padding:0}#app{max-width:none;padding:0}
-  .paper{border:0;border-radius:0;overflow:visible;margin:0;break-after:page}
-  .paper table{min-width:0;font-size:10px}
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-}
 .today{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
-.today .big{font-family:var(--display);font-weight:700;font-size:2rem;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.today .big{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .today .last{color:var(--muted);font-size:.9rem;margin-top:2px}
-.sets{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.set{width:64px;height:64px;border-radius:50%;border:2px solid var(--ink);background:transparent;font-family:var(--display);font-weight:700;font-size:1.5rem}
+.trow{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.tmain{flex:1;min-width:0}
+.pslot{flex:none;width:84px;height:84px;border:1.5px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.pslot img{display:block;width:100%;height:100%;object-fit:cover}
+.sets{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.set{width:58px;height:58px;border-radius:50%;border:2px solid var(--ink);background:transparent;font-family:var(--display);font-weight:700;font-size:1.5rem}
 .set[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .plan{margin-top:18px}
 .plan h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
@@ -332,12 +292,9 @@ function sheetHtml(){
   var last=lastTime(e);
   var h='<div class="veil" data-a="veil"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="'+esc(e.name)+'">';
   h+='<div class="sh-head"><h2>'+esc(e.name)+'</h2><button class="x" data-a="close" aria-label="Close">✕</button></div>';
-  h+='<div class="pic">'+(PH[e.id]?'<img src="'+PH[e.id]+'" alt="'+esc(e.name)+'">':drawFor(e.name))+
-    '<div class="acts"><label class="btn" for="photo" tabindex="0">'+(PH[e.id]?'Change photo':'Use my own photo')+'</label><input id="photo" type="file" accept="image/*" hidden>'+
-    (PH[e.id]?'<button class="btn" data-a="rmphoto">Show sketch</button>':'')+'</div></div>';
-  h+='<div class="today"><div class="sub" style="color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">'+DAYN[dow]+' plan</div><div class="big">'+esc(summary(p))+'</div>'+
+  h+='<div class="today"><div class="trow"><div class="tmain"><div class="sub" style="color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">'+DAYN[dow]+' plan</div><div class="big">'+esc(summary(p))+'</div>'+
     (last?'<div class="last">Last done '+esc(last)+'</div>':'')+
-    '<div class="sets" role="group" aria-label="Sets">';
+    '</div><div class="pslot" aria-hidden="true">'+(PH[e.id]?'<img src="'+PH[e.id]+'" alt="">':'')+'</div></div><div class="sets" role="group" aria-label="Sets">';
   for(var i=0;i<p.sets;i++){
     var on=!!(entry(U.date,e.id)&&entry(U.date,e.id).sets[i]);
     h+='<button class="set" data-a="set" data-v="'+i+'" aria-pressed="'+on+'" aria-label="Set '+(i+1)+'">'+(on?'✓':(i+1))+'</button>';
@@ -382,133 +339,6 @@ function lastTime(e){
   return fromKey(k).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+': '+summary(s);
 }
 
-/* ---------- drawings: stick figures built from joint angles ---------- */
-var LEN={t:28,ua:15,fa:14,th:20,sh:20,ft:8};
-function vec(a){var r=a*Math.PI/180;return [Math.sin(r),Math.cos(r)]}
-function mv(p,a,l){var d=vec(a);return [p[0]+d[0]*l,p[1]+d[1]*l]}
-function P(o){var b={T:180,U:0,F:0,H:0,K:0,ft:90};for(var k in o)b[k]=o[k];return b}
-var LIE={T:-90};
-var TPL={
- stand1:{f:[{U:10,F:20},{U:70,F:80}]},
- curl:{f:[{U:5,F:5},{U:5,F:150}],p:['db']},
- ohpress:{f:[{U:15,F:170},{U:176,F:178}],p:['db']},
- ohbar:{f:[{U:15,F:170},{U:176,F:178}],p:['bar']},
- bentrow:{f:[{T:110,H:20,K:-10},{T:110,H:20,K:-10,U:-140}],p:['db1']},
- rowbar:{f:[{T:110,H:20,K:-10},{T:110,H:20,K:-10,U:-140}],p:['bar']},
- pulldown:{f:[{T:175,H:90,K:0,U:175,F:178,anc:'hip'},{T:175,H:90,K:0,U:-15,F:140,anc:'hip'}],p:['cable']},
- seatedrow:{f:[{T:180,H:80,K:10,U:90,F:90,anc:'hip'},{T:170,H:80,K:10,U:-80,F:95,anc:'hip'}],p:['bar']},
- invrow:{f:[{T:-100,H:80,K:80,U:180,F:180},{T:-100,H:80,K:80,U:-140,F:150}],p:['bar']},
- squat:{f:[{U:90,F:90},{T:140,H:75,K:-20,U:90,F:90}]},
- squatbar:{f:[{U:150,F:-150},{T:140,H:75,K:-20,U:150,F:-150}],p:['barsh']},
- lunge:{f:[{U:20,F:20},{H:70,K:-5,H2:-35,K2:-80,U:20,F:20}]},
- deadlift:{f:[{T:115,H:45,K:-15,U:10},{}],p:['bar']},
- kbswing:{f:[{T:125,H:35,K:-10,U:25,F:20},{U:90,F:90}],p:['kb']},
- lift:{f:[{T:120,H:45,K:-15,U:15,F:10},{U:5,F:80}],p:['box']},
- snatch:{f:[{T:120,H:45,K:-15,U:15,F:10},{U:176,F:178}],p:['db1']},
- carry:{f:[{H:15,K:5,H2:-15,K2:-5},{H:-15,K:-5,H2:15,K2:5}],p:['db']},
- pushup:{f:[{T:113,H:-67,K:-67,ft:45},{T:101,H:-79,K:-79,ft:45,U:-60,F:62}]},
- plank:{f:[{T:102,H:-78,K:-78,ft:45,U:0,F:90}],l:['Hold']},
- incline:{f:[{T:-140,H:80,K:5,U:60,F:150},{T:-140,H:80,K:5,U:150,F:150}],p:['bench','db']},
- inclinebar:{f:[{T:-140,H:80,K:5,U:60,F:150},{T:-140,H:80,K:5,U:150,F:150}],p:['bench','bar']},
- pushdown:{f:[{U:5,F:100},{U:5,F:8}],p:['cable']},
- skull:{f:[{T:-90,H:150,K:20,U:180,F:-100},{T:-90,H:150,K:20,U:180,F:180}],p:['db']},
- legext:{f:[{T:175,H:90,K:0,anc:'hip'},{T:175,H:90,K:90,anc:'hip'}],p:['bench']},
- hamcurl:{f:[{T:175,H:90,K:90,anc:'hip'},{T:175,H:90,K:0,anc:'hip'}],p:['bench']},
- calf:{f:[{},{ft:35}]},
- clam:{f:[{T:-90,H:120,K:60,U:90,F:90},{T:-90,H:120,K:60,H2:140,K2:60,U:90,F:90}]},
- bandwalk:{f:[{H:20,K:5,H2:-20,K2:-5},{H:-20,K:-5,H2:20,K2:5}],p:['band']},
- crunch:{f:[{T:-90,H:150,K:20,U:-170,F:-100},{T:-125,H:150,K:20,U:-170,F:-100}]},
- flutter:{f:[{T:-90,H:110,K:110,H2:95,K2:95,U:90,F:90},{T:-90,H:95,K:95,H2:110,K2:110,U:90,F:90}]},
- birddog:{f:[{T:90,H:0,K:-90,U:0,F:0},{T:90,H:0,K:-90,H2:-90,K2:-90,U:90,F:90,U2:0,F2:0}]},
- wallsit:{f:[{T:180,H:90,K:0,U:20,F:70}],p:['wall'],l:['Hold']},
- stepup:{f:[{H:70,K:-40,H2:0,K2:0,U:20,F:20},{H:0,K:0,H2:100,K2:-10,U:20,F:20,fo:18}],p:['boxstep']},
- dips:{f:[{H:15,K:-25,hang:1,anc:'hand',sc:.8},{H:15,K:-25,U:-60,F:60,hang:1,anc:'hand',sc:.8}],p:['bars']},
- climb:{f:[{T:170,U:160,F:170,U2:170,F2:175,H:60,K:-30},{T:170,U:170,F:175,U2:160,F2:170,H2:60,K2:-30}],p:['ladder']},
- nustep:{f:[{H:80,K:5,H2:60,K2:45,U:80,F:85,U2:40,F2:60,anc:'hip'},{H:60,K:45,H2:80,K2:5,U:40,F:60,U2:80,F2:85,anc:'hip'}],p:['bench']},
- armbike:{f:[{H:85,K:0,U:85,F:75,U2:50,F2:110,anc:'hip'},{H:85,K:0,U:50,F:110,U2:85,F2:75,anc:'hip'}],p:['bench']},
- walk:{f:[{H:20,K:5,H2:-20,K2:-5,U:-35,F:-10,U2:35,F2:10},{H:-20,K:-5,H2:20,K2:5,U:35,F:10,U2:-35,F2:-10}]},
- reach:{f:[{},{U:178,F:178}]},
- reachbar:{f:[{U:30,F:80},{U:178,F:178}],p:['bar']},
- raise:{f:[{U:0,F:0},{U:90,F:90}]},
- extrot:{f:[{U:0,F:90},{U:0,F:135}]},
- reach2:{f:[{U:178,F:178},{U:90,F:90}]},
- sled:{f:[{T:125,H:30,K:-25,H2:-50,K2:-70,U:100,F:100},{T:125,H:-50,K:-70,H2:30,K2:-25,U:100,F:100}],p:['sled']},
- star:{f:[{T:170,H2:5,K2:5,U:60,F:60},{T:140,H2:-80,K2:-80,U:70,F:70}]},
- athletic:{f:[{T:160,H:45,K:-30,U:40,F:70}],l:['Ready']},
- plyo:{f:[{T:140,H:75,K:-20,U:-20,F:-20},{U:140,F:150,ft:35,fo:14}]},
- sledge:{f:[{U:170,F:170},{T:120,H:20,K:-10,U:60,F:30}],p:['stick']},
- turkish:{f:[{T:-90,H:100,K:100,U:180,F:180},{T:-150,H:100,K:100,U:180,F:180}],p:['db1']},
- nordic:{f:[{T:180,H:0,K:-90,U:40,F:120},{T:120,H:-60,K:-90,U:40,F:120}]},
- abwheel:{f:[{T:180,H:0,K:-90,U:20,F:20},{T:100,H:-80,K:-90,U:100,F:100}],p:['wheel']},
- lumbar:{f:[{T:170,H:90,K:0,U:60,F:100,anc:'hip'},{T:-165,H:90,K:0,U:60,F:100,anc:'hip'}],p:['bench']},
- seatedcore:{f:[{T:178,H:90,K:0,U:30,F:110,anc:'hip'},{T:140,H:90,K:0,U:30,F:110,anc:'hip'}],p:['bench']},
- roller:{f:[{U:90,F:90}],p:['bar'],l:['Hold']},
- tib:{f:[{T:-170,H:15,K:15,ft:90},{T:-170,H:15,K:15,ft:140}],p:['wall']}
-};
-var MAP=[[/nustep/,'nustep'],[/arm bike/,'armbike'],[/treadmill/,'walk'],[/flexion/,'raise'],[/horizontal abd/,'raise'],[/external rot/,'extrot'],
-[/pt exer|super stretch/,'reach'],[/pvc/,'reachbar'],[/vibra/,'stand1'],[/box lift|concrete bag|screw transfer/,'lift'],[/sled push/,'sled'],
-[/sledgehammer/,'sledge'],[/plank/,'plank'],[/star exc/,'star'],[/hexagon/,'athletic'],[/plyo/,'plyo'],[/nordic/,'nordic'],[/hamstring curl/,'hamcurl'],
-[/bicep|hammer curl|easy bar/,'curl'],[/skull/,'skull'],[/pulldown|bucket pull vert/,'pulldown'],[/bucket pull horiz|seated rows/,'seatedrow'],
-[/inverted/,'invrow'],[/bent over/,'rowbar'],[/one arm row/,'bentrow'],[/barbell.*incline/,'inclinebar'],[/incline/,'incline'],[/barbell shoulder/,'ohbar'],
-[/shoulder press|champagne/,'ohpress'],[/back or front/,'squatbar'],[/squat|sit to stand/,'squat'],[/lunge/,'lunge'],[/deadlift/,'deadlift'],[/kettle/,'kbswing'],
-[/clean|snatch/,'snatch'],[/turkish/,'turkish'],[/farmers|suitcase/,'carry'],[/push-up/,'pushup'],[/pushdown/,'pushdown'],[/dips/,'dips'],[/ladder/,'climb'],
-[/stair|step-up/,'stepup'],[/leg ext/,'legext'],[/calf/,'calf'],[/clam/,'clam'],[/band walk/,'bandwalk'],[/crunch/,'crunch'],[/flutter/,'flutter'],[/bird/,'birddog'],
-[/wall sit/,'wallsit'],[/ab wheel/,'abwheel'],[/lumbar/,'lumbar'],[/torso rot|core iso/,'seatedcore'],[/forearm roll/,'roller'],[/tib bar/,'tib'],[/^i.s, y/,'reach2']];
-function tplFor(name){var n=name.toLowerCase();for(var i=0;i<MAP.length;i++)if(MAP[i][0].test(n))return TPL[MAP[i][1]];return TPL.stand1}
-function fmt(n){return Math.round(n*10)/10}
-function seg(a,b,c){return '<line class="'+c+'" x1="'+fmt(a[0])+'" y1="'+fmt(a[1])+'" x2="'+fmt(b[0])+'" y2="'+fmt(b[1])+'"/>'}
-function drawFrame(o,props,ox,label){
-  var p=P(o),hip=[0,0],sh=mv(hip,p.T,LEN.t),hd=mv(sh,p.T,9);
-  var U2=p.U2==null?p.U:p.U2,F2=p.F2==null?p.F:p.F2,H2=p.H2==null?p.H:p.H2,K2=p.K2==null?p.K:p.K2,ft2=p.ft2==null?p.ft:p.ft2;
-  var el=mv(sh,p.U,LEN.ua),ha=mv(el,p.F,LEN.fa),el2=mv(sh,U2,LEN.ua),ha2=mv(el2,F2,LEN.fa);
-  var kn=mv(hip,p.H,LEN.th),an=mv(kn,p.K,LEN.sh),to=mv(an,p.ft,LEN.ft);
-  var kn2=mv(hip,H2,LEN.th),an2=mv(kn2,K2,LEN.sh),to2=mv(an2,ft2,LEN.ft);
-  var all=[hip,sh,el,ha,el2,ha2,kn,an,to,kn2,an2,to2];
-  var low=Math.max.apply(null,all.map(function(q){return q[1]}));
-  var xs=all.concat([hd]).map(function(q){return q[0]});
-  var minx=Math.min.apply(null,xs),maxx=Math.max.apply(null,xs);
-  var floor=low+(p.fo||0);
-  var top=Math.min(Math.min.apply(null,all.map(function(q){return q[1]})),hd[1]-6);
-  var sc=p.sc||Math.min(1,84/Math.max(1,maxx-minx+12),84/Math.max(1,floor-top));
-  var ty=p.anc==='hip'?62:(p.anc==='hand'?44-sc*ha[1]:90-sc*floor);
-  var tx=ox+50-sc*(minx+maxx)/2;
-  var g='';
-  if(!p.hang)g+='<line class="dr-g" x1="'+fmt(minx-14)+'" y1="'+fmt(floor)+'" x2="'+fmt(maxx+14)+'" y2="'+fmt(floor)+'"/>';
-  var has=function(k){return props.indexOf(k)>=0};
-  if(has('wall')){var wx=Math.min(hip[0],sh[0])-9;g+=seg([wx,floor-74],[wx,floor],'dr-g')}
-  if(has('bench')){var bk=vec(p.T+90),b1=mv(mv(hip,p.T,-6),p.T+90,5),b2=mv(mv(sh,p.T,12),p.T+90,5);
-    g+=seg(b1,b2,'dr-g');if(b1[1]<floor-4)g+=seg(b1,[b1[0],floor],'dr-g')}
-  if(has('sled')){var hx=Math.max(ha[0],ha2[0]);g+=seg(ha,[hx+4,floor-16],'dr-g')+'<rect class="dr-p" x="'+fmt(hx+2)+'" y="'+fmt(floor-16)+'" width="22" height="16" rx="2"/>'}
-  if(has('ladder')){var lx=Math.max(ha[0],ha2[0]);for(var y=floor-88;y<floor;y+=9)g+=seg([lx,y],[lx+12,y],'dr-g');g+=seg([lx,floor-88],[lx,floor],'dr-g')+seg([lx+12,floor-88],[lx+12,floor],'dr-g')}
-  if(has('boxstep')){var fy=Math.max(an[1],to[1]);if(floor-fy>3)g+='<rect class="dr-p" x="'+fmt(Math.min(an[0],to[0])-6)+'" y="'+fmt(fy)+'" width="26" height="'+fmt(floor-fy)+'"/>'}
-  if(has('bars'))g+=seg([ha[0]-11,ha[1]+3],[ha[0]+11,ha[1]+3],'dr-g');
-  if(has('cable'))g+=seg(ha,[ha[0],Math.min(ha[1]-4,floor-88)],'dr-g');
-  g+=seg(sh,el2,'dr-b dr-far')+seg(el2,ha2,'dr-b dr-far')+seg(hip,kn2,'dr-b dr-far')+seg(kn2,an2,'dr-b dr-far')+seg(an2,to2,'dr-b dr-far');
-  g+=seg(hip,sh,'dr-b')+seg(hip,kn,'dr-b')+seg(kn,an,'dr-b')+seg(an,to,'dr-b')+seg(sh,el,'dr-b')+seg(el,ha,'dr-b');
-  g+='<circle class="dr-h" cx="'+fmt(hd[0])+'" cy="'+fmt(hd[1])+'" r="6"/>';
-  var circ=function(q,r){return '<circle class="dr-p" cx="'+fmt(q[0])+'" cy="'+fmt(q[1])+'" r="'+r+'"/>'};
-  var rect=function(q,w,h){return '<rect class="dr-p" x="'+fmt(q[0]-w/2)+'" y="'+fmt(q[1]-h/2)+'" width="'+w+'" height="'+h+'" rx="1.5"/>'};
-  if(has('db')){g+=rect(ha2,10,5)+rect(ha,10,5)}
-  if(has('db1'))g+=rect(ha,10,5);
-  if(has('bar'))g+=circ(ha,6);
-  if(has('barsh'))g+=circ(sh,6);
-  if(has('kb'))g+=circ(mv(ha,p.F,5),6);
-  if(has('box'))g+=rect([ha[0]+4,ha[1]],18,13);
-  if(has('wheel'))g+=circ(ha,5);
-  if(has('band'))g+=seg(kn,kn2,'dr-g')+seg(an,an2,'dr-g');
-  if(has('stick')){var s1=mv(ha,p.F,-10),s2=mv(ha,p.F,26);g+=seg(s1,s2,'dr-b')+circ(s2,4.5)}
-  var out='<g transform="translate('+fmt(tx)+','+fmt(ty)+') scale('+fmt(sc)+')">'+g+'</g>';
-  if(label)out+='<text class="dr-t" x="'+(ox+50)+'" y="104">'+label+'</text>';
-  return out;
-}
-function drawFor(name){
-  var t=tplFor(name),pr=t.p||[],two=t.f.length>1,l=t.l||['Start','Finish'];
-  var s='<svg class="draw" viewBox="0 0 230 108" role="img" aria-label="Sketch of '+esc(name)+'">';
-  s+=drawFrame(t.f[0],pr,two?0:65,l[0]);
-  if(two){s+='<g class="dr-g"><line x1="103" y1="48" x2="125" y2="48"/><polyline points="119,43 125,48 119,53"/></g>';s+=drawFrame(t.f[1],pr,130,l[1])}
-  return s+'</svg>';
-}
-window.__wl={drawFor:drawFor,TPL:TPL};
 
 
 /* ---------- history and progress ---------- */
@@ -741,7 +571,6 @@ app.addEventListener('click',function(ev){
     en.snap={sets:p.sets,reps:p.reps,weight:p.weight,weighted:p.weighted};
     persist();render();
   }
-  else if(a==='rmphoto'){keepSheet();delete PH[U.open];save(PKEY,PH);render()}
   else if(a==='target'){keepSheet();U.target=v;render()}
   else if(a==='resetday'){keepSheet();var e2=byId(U.open);
     if(U.scope==='week'){var wk2=weekOf(fromKey(U.date))[0];if(e2.wk&&e2.wk[wk2]){delete e2.wk[wk2][U.target];if(!Object.keys(e2.wk[wk2]).length)delete e2.wk[wk2]}}
@@ -778,7 +607,6 @@ app.addEventListener('change',function(ev){
   var t=ev.target,a=t.getAttribute('data-a');
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
-  if(t.id==='photo'){return addPhoto(t.files&&t.files[0])}
   if(a==='freq'){byId(t.getAttribute('data-v')).freq=t.value;persist();keepSheet();return render()}
   if(a==='uw'){byId(U.open).plan.weighted=t.checked?1:0;persist();keepSheet();return render()}
   if(a==='pf'){
@@ -800,26 +628,8 @@ app.addEventListener('input',function(ev){
   if(ev.target.id==='pq'){U.pq=ev.target.value;var ps=ev.target.selectionStart;render();var pi=document.getElementById('pq');pi.focus();pi.setSelectionRange(ps,ps)}
   if(ev.target.id==='q'){U.q=ev.target.value;var pos=ev.target.selectionStart;render();var i=document.getElementById('q');i.focus();i.setSelectionRange(pos,pos)}
 });
-function addPhoto(file){
-  if(!file)return;
-  var id=U.open,fr=new FileReader();
-  fr.onload=function(){
-    var im=new Image();
-    im.onload=function(){
-      var max=700,r=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');
-      c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
-      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      PH[id]=c.toDataURL('image/jpeg',.8);
-      if(!save(PKEY,PH)){/* storage full or blocked: still shown until reload */}
-      keepSheet();render();
-    };
-    im.src=fr.result;
-  };
-  fr.readAsDataURL(file);
-}
 document.addEventListener('keydown',function(ev){
   if(ev.key==='Escape'&&U.open){U.open=null;render()}
-  var t=ev.target;if((ev.key==='Enter'||ev.key===' ')&&t.tagName==='LABEL'&&t.htmlFor==='photo'){ev.preventDefault();document.getElementById('photo').click()}
 });
 render();
 })();
