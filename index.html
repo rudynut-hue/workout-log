@@ -128,6 +128,13 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .tmain{flex:1;min-width:0}
 .pslot{flex:none;width:84px;height:84px;border:1.5px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
 .pslot img{display:block;width:100%;height:100%;object-fit:cover}
+button.pslot.has{padding:0;border:1px solid var(--line);cursor:pointer;background:#fff}
+.lb{z-index:20;align-items:center}
+.lbbox{background:var(--surface);border-radius:14px;padding:14px;width:100%;max-width:440px;max-height:94%;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.lbname{font-family:var(--display);font-weight:700;font-size:1.4rem}
+.lbbox figure{margin:0}
+.lbbox img{display:block;width:100%;border-radius:8px;background:#fff}
+.lbbox figcaption{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
 .sets{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .set{width:58px;height:58px;border-radius:50%;border:2px solid var(--ink);background:transparent;font-family:var(--display);font-weight:700;font-size:1.5rem}
 .set[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
@@ -240,7 +247,7 @@ var todayKey=dkey(new Date());
 
 function render(){
   var keepScroll=window.scrollY;
-  app.innerHTML=(U.tab==='today'?viewToday():U.tab==='progress'?viewProgress():U.tab==='week'?viewWeek():viewSetup())+navHtml()+(U.open?sheetHtml():'');
+  app.innerHTML=(U.tab==='today'?viewToday():U.tab==='progress'?viewProgress():U.tab==='week'?viewWeek():viewSetup())+navHtml()+(U.open?sheetHtml():'')+(U.big?lightboxHtml():'');
   window.scrollTo(0,keepScroll);
   var sh=document.getElementById('sheet');if(sh&&U._sheetScroll)sh.scrollTop=U._sheetScroll;
 }
@@ -312,6 +319,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -327,7 +335,7 @@ function sheetHtml(){
   h+='<div class="sh-head"><h2>'+esc(e.name)+'</h2><button class="x" data-a="close" aria-label="Close">✕</button></div>';
   h+='<div class="today"><div class="trow"><div class="tmain"><div class="sub" style="color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">'+DAYN[dow]+' plan</div><div class="big">'+esc(summary(p))+'</div>'+
     (last?'<div class="last">Last done '+esc(last)+'</div>':'')+
-    '</div><div class="pslot" aria-hidden="true">'+(PH[e.id]?'<img src="'+PH[e.id]+'" alt="">':'')+'</div></div><div class="sets" role="group" aria-label="Sets">';
+    '</div>'+slotHtml(e)+'</div><div class="sets" role="group" aria-label="Sets">';
   for(var i=0;i<p.sets;i++){
     var on=!!(entry(U.date,e.id)&&entry(U.date,e.id).sets[i]);
     h+='<button class="set" data-a="set" data-v="'+i+'" aria-pressed="'+on+'" aria-label="Set '+(i+1)+'">'+(on?'✓':(i+1))+'</button>';
@@ -576,11 +584,30 @@ function wkAction(a){
     else copy();
   }
 }
+/* ---------- exercise photos (Free Exercise DB, public domain) ---------- */
+var PICS={"Treadmill": "Walking_Treadmill", "Sled Push / Pull": "Sled_Push", "Planks": "Plank", "Theraband Bilateral External Rotation": "External_Rotation_with_Band", "Farmers Carry": "Farmers_Walk", "Lat Pulldowns": "Wide-Grip_Lat_Pulldown", "Seated Rows": "Seated_Cable_Rows", "Tricep Pushdowns": "Triceps_Pushdown", "Easy Bar Curls": "EZ-Bar_Curl", "One Arm Rows": "One-Arm_Dumbbell_Row", "Leg Extensions": "Leg_Extensions", "Hamstring Curls": "Seated_Leg_Curl", "Reverse Pulldowns": "Underhand_Cable_Pulldowns", "Calf Raises": "Standing_Calf_Raises", "Sledgehammer & Tire": "Sledgehammer_Swings", "Pallet Step-Ups": "Dumbbell_Step_Ups", "Twist Crunches": "Cross-Body_Crunch", "Bicep Curls": "Dumbbell_Bicep_Curl", "Hammer Curls": "Hammer_Curls", "Ab Wheel": "Ab_Roller", "Dumbbell Incline Bench": "Incline_Dumbbell_Press", "Dumbbell Shoulder Press": "Dumbbell_Shoulder_Press", "Lunges": "Dumbbell_Lunges", "Kettlebell Swings": "One-Arm_Kettlebell_Swings", "Flutter Kicks & Crossovers": "Flutter_Kicks", "Inverted Barbell Rows (Pronated and Supinated)": "Inverted_Row", "Forearm Roller": "Wrist_Roller", "Dips": "Parallel_Bar_Dip", "Deadlift": "Barbell_Deadlift", "Barbell Incline Press": "Barbell_Incline_Bench_Press_-_Medium_Grip", "Barbell Shoulder Press": "Barbell_Shoulder_Press", "Barbell Bent Over Rows": "Bent_Over_Barbell_Row", "Barbell Back or Front Squats": "Barbell_Squat", "Turkish Get Ups": "Kettlebell_Turkish_Get-Up_Squat_style", "Dumbbell Cleans and/or Snatches": "Dumbbell_Clean", "Skull Crushers": "EZ-Bar_Skullcrusher", "Neutral Grip Incline Bench": "Hammer_Grip_Incline_DB_Bench_Press", "Lateral Band Walks": "Monster_Walk"};
+function picsFor(e){var id=PICS[e.name];return id?['pics/'+id+'/0.jpg','pics/'+id+'/1.jpg']:null}
+function slotHtml(e){
+  var pc=picsFor(e);
+  if(!pc)return '<div class="pslot" aria-hidden="true"></div>';
+  return '<button class="pslot has" data-a="bigpic" aria-label="Show the '+esc(e.name)+' photos larger"><img data-flip="1" data-n="0" data-p0="'+pc[0]+'" data-p1="'+pc[1]+'" src="'+pc[0]+'" alt=""></button>';
+}
+function lightboxHtml(){
+  var e=byId(U.big),pc=e&&picsFor(e);if(!pc)return '';
+  return '<div class="veil lb" data-a="lbveil"><div class="lbbox" role="dialog" aria-modal="true" aria-label="'+esc(e.name)+' photos"><div class="lbname">'+esc(e.name)+'</div>'+
+    '<figure><img src="'+pc[0]+'" alt="'+esc(e.name)+', start position"><figcaption>Start</figcaption></figure>'+
+    '<figure><img src="'+pc[1]+'" alt="'+esc(e.name)+', finish position"><figcaption>Finish</figcaption></figure>'+
+    '<button class="btn pri" data-a="lbclose">Close</button></div></div>';
+}
+try{if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)setInterval(function(){
+  var im=document.querySelectorAll('img[data-flip]');for(var i=0;i<im.length;i++){var n=im[i].getAttribute('data-n')==='1'?'0':'1';im[i].setAttribute('data-n',n);im[i].src=im[i].getAttribute('data-p'+n)}
+},1300)}catch(x){}
 /* ---------- events ---------- */
 function keepSheet(){var s=document.getElementById('sheet');U._sheetScroll=s?s.scrollTop:0}
 app.addEventListener('click',function(ev){
   var t=ev.target.closest('[data-a]');if(!t)return;
   var a=t.getAttribute('data-a'),v=t.getAttribute('data-v');
+  if(a==='lbveil'){if(ev.target!==t)return;U.big=null;return render()}
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
   if(a==='tab'){U.note='';U.confirm=null;U.tab=v;U.open=null;render()}
@@ -590,6 +617,8 @@ app.addEventListener('click',function(ev){
   else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
   else if(a==='day'){U.date=v;render()}
   else if(a==='open'){U.open=v;U.target='all';U.scope=weekOf(fromKey(U.date))[0]===weekOf(new Date())[0]?'all':'week';U._sheetScroll=0;render()}
+  else if(a==='bigpic'){keepSheet();U.big=U.open;render()}
+  else if(a==='lbclose'){keepSheet();U.big=null;render()}
   else if(a==='scope'){keepSheet();U.scope=v;U.target='all';render()}
   else if(a==='tprev'){U.date=shiftWeek(U.date,-1);render()}
   else if(a==='tnext'){U.date=shiftWeek(U.date,1);render()}
@@ -662,7 +691,7 @@ app.addEventListener('input',function(ev){
   if(ev.target.id==='q'){U.q=ev.target.value;var pos=ev.target.selectionStart;render();var i=document.getElementById('q');i.focus();i.setSelectionRange(pos,pos)}
 });
 document.addEventListener('keydown',function(ev){
-  if(ev.key==='Escape'&&U.open){U.open=null;render()}
+  if(ev.key==='Escape'&&(U.big||U.open)){if(U.big)U.big=null;else U.open=null;render()}
 });
 render();
 })();
