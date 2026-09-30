@@ -555,16 +555,17 @@ function weekModel(mon){
   var did=function(e){return dates.some(function(k){return checked(k,e.id)>0})};
   var list=S.ex.filter(function(e){return e.freq!=='off'||did(e)});
   if(U.wkOnly)list=list.filter(did);
-  var sheets=[];
-  for(var i=0;i<list.length;i+=14){
-    sheets.push(list.slice(i,i+14).map(function(e){
+  var sheets=[],pageNums=[];
+  for(var pg=0;pg*14<S.ex.length;pg++){
+    var rows=list.filter(function(e){return Math.floor(S.ex.indexOf(e)/14)===pg}).map(function(e){
       var g=e.freq==='off'?'':e.freq;
       return {name:e.name,group:g,amount:amountText(e.plan),
         sched:dates.map(function(k){return scheduled(e,fromKey(k).getDay())}),
         cells:dates.map(function(k){return cellText(e,k)})};
-    }));
+    });
+    if(rows.length){sheets.push(rows);pageNums.push(pg+1)}
   }
-  return {dates:dates,sheets:sheets,any:list.some(function(e){return dates.some(function(k){return checked(k,e.id)>0})})};
+  return {dates:dates,sheets:sheets,pageNums:pageNums,any:list.some(function(e){return dates.some(function(k){return checked(k,e.id)>0})})};
 }
 function md(k){var d=fromKey(k);return (d.getMonth()+1)+'/'+d.getDate()}
 function sheetTable(rows,m){
@@ -595,10 +596,12 @@ function wrapLines(ctx,text,w,maxLines){
   return lines;
 }
 function sheetImage(m,cb){
-  var CW=[310,120,150,150,150,150,150],PAD=14,GAP=26,SC=2,W=CW.reduce(function(a,b){return a+b},0);
+  var CW=[310,120,150,150,150,150,150],PAD=14,SC=2,W=CW.reduce(function(a,b){return a+b},0);
   var scratch=document.createElement('canvas').getContext('2d');
   var FONT='15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',BOLD='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  var pages=m.sheets.map(function(rows){
+  if(!m.sheets.length){cb([]);return}
+  var out=[],left=m.sheets.length;
+  m.sheets.forEach(function(rows,idx){
     var R=[];
     R.push([{t:'Name',b:1},{t:S.name||''}].concat(LEGEND.map(function(t,i){return {t:t,f:GCOL[GORDER[i]],c:1}})));
     R.push([{t:''},{t:'Date',b:1}].concat(m.dates.map(function(k){return {t:md(k),c:1}})));
@@ -611,15 +614,11 @@ function sheetImage(m,cb){
       var mx=1;row.forEach(function(c,i){scratch.font=c.b?BOLD:FONT;c.lines=wrapLines(scratch,c.t,CW[i]-14,2);mx=Math.max(mx,c.lines.length)});
       row.h=mx>1?46:32;
     });
-    return R;
-  });
-  if(!pages.length){cb(null);return}
-  var H=PAD*2+pages.reduce(function(a,R){return a+R.reduce(function(x,r){return x+r.h},0)},0)+GAP*(pages.length-1);
-  var cv=document.createElement('canvas');cv.width=(W+PAD*2)*SC;cv.height=H*SC;
-  var ctx=cv.getContext('2d');ctx.scale(SC,SC);ctx.fillStyle='#fff';ctx.fillRect(0,0,W+PAD*2,H);
-  ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.textBaseline='middle';
-  var y=PAD;
-  pages.forEach(function(R){
+    var H=PAD*2+R.reduce(function(x,r){return x+r.h},0);
+    var cv=document.createElement('canvas');cv.width=(W+PAD*2)*SC;cv.height=H*SC;
+    var ctx=cv.getContext('2d');ctx.scale(SC,SC);ctx.fillStyle='#fff';ctx.fillRect(0,0,W+PAD*2,H);
+    ctx.strokeStyle='#333';ctx.lineWidth=1;ctx.textBaseline='middle';
+    var y=PAD;
     R.forEach(function(row){
       var x=PAD;
       row.forEach(function(c,i){
@@ -632,9 +631,8 @@ function sheetImage(m,cb){
       });
       y+=row.h;
     });
-    y+=GAP;
+    cv.toBlob(function(b){out[idx]=b;if(--left===0)cb(out)},'image/png');
   });
-  cv.toBlob(function(b){cb(b)},'image/png');
 }
 function viewWeek(){
   var m=weekModel(U.wk);
@@ -642,11 +640,11 @@ function viewWeek(){
   h+='<div class="wknav noprint"><button class="btn" data-a="wkprev" aria-label="Previous week">‹</button><b>'+md(m.dates[0])+' – '+md(m.dates[4])+'</b><button class="btn" data-a="wknext" aria-label="Next week">›</button></div>';
   h+='<div class="field noprint"><label for="wkname">Name on the sheet</label><input id="wkname" data-a="wkname" value="'+esc(S.name||'')+'" autocomplete="name"></div>';
   var txt=summaryText(m);
-  h+='<label class="chk noprint"><input type="checkbox" id="wkonly" data-a="wkonly"'+(U.wkOnly?' checked':'')+'> Only show what I did (shorter picture)</label>';
-  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send picture of sheet</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wksave">Save picture</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
-  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send picture opens your phone\u2019s share sheet so you can pick Messages or Mail. The picture looks like your paper sheet.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
+  h+='<label class="chk noprint"><input type="checkbox" id="wkonly" data-a="wkonly"'+(U.wkOnly?' checked':'')+'> Only show what I did (fewer, shorter pictures)</label>';
+  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send pictures of sheets</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wksave">Save pictures</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
+  h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send pictures opens your phone\u2019s share sheet so you can pick Messages or Mail. You get one picture for each of your sheets.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
   h+='<div class="field noprint"><label for="wktext">What will be sent</label><textarea id="wktext" readonly rows="12">'+esc(txt)+'</textarea></div>';
-  h+='<div class="hint noprint" style="margin-top:14px">What the picture and printout look like:</div>';
+  h+='<div class="hint noprint" style="margin-top:14px">The sheets, as they will be pictured and printed:</div>';
   h+=m.sheets.map(function(r){return '<div class="paper">'+sheetTable(r,m)+'</div>'}).join('');
   return h;
 }
@@ -665,17 +663,20 @@ function wkAction(a){
   };
   if(a==='wkcopy')return copy();
   if(a==='wkpic'||a==='wksave'){
-    var m2=weekModel(U.wk),nm='Workout-Week-'+m2.dates[0]+'.png';
-    wkSay('Making the picture...');
-    sheetImage(m2,function(blob){
-      if(!blob){wkSay('Nothing to draw for this week yet.');return}
-      var file=null;try{file=new File([blob],nm,{type:'image/png'})}catch(x){}
-      if(a==='wkpic'&&file&&navigator.canShare&&navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:subj}).then(function(){wkSay('Sent.')},function(){wkSay('Cancelled.')});return;
+    var m2=weekModel(U.wk);
+    wkSay('Making the pictures...');
+    sheetImage(m2,function(blobs){
+      if(!blobs.length){wkSay('Nothing to draw for this week yet.');return}
+      var files=[],names=blobs.map(function(b,i){return 'Workout-Week-'+m2.dates[0]+'-Sheet'+m2.pageNums[i]+'.png'});
+      try{files=blobs.map(function(b,i){return new File([b],names[i],{type:'image/png'})})}catch(x){files=[]}
+      if(a==='wkpic'&&files.length&&navigator.canShare&&navigator.canShare({files:files})){
+        navigator.share({files:files,title:subj}).then(function(){wkSay('Sent.')},function(){wkSay('Cancelled.')});return;
       }
-      var url=URL.createObjectURL(blob),an=document.createElement('a');an.href=url;an.download=nm;document.body.appendChild(an);an.click();an.remove();
-      setTimeout(function(){URL.revokeObjectURL(url)},4000);
-      wkSay(a==='wkpic'?'This browser can\u2019t open the share sheet, so the picture was saved. Attach it to a text or email.':'Saved '+nm+'.');
+      blobs.forEach(function(b,i){setTimeout(function(){
+        var url=URL.createObjectURL(b),an=document.createElement('a');an.href=url;an.download=names[i];document.body.appendChild(an);an.click();an.remove();
+        setTimeout(function(){URL.revokeObjectURL(url)},4000);
+      },i*400)});
+      wkSay((a==='wkpic'?'This browser can\u2019t open the share sheet, so ':'')+blobs.length+' picture'+(blobs.length===1?' was':'s were')+' saved to your phone. '+(a==='wkpic'?'Attach them to a text or email.':''));
     });
     return;
   }
