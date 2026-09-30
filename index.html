@@ -79,9 +79,15 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .tools input[type=search]{flex:1 1 180px}
 .btn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-height:44px;font-weight:600}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.xrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px}
+.xrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px}
 .xrow .nm{flex:1;min-width:0;background:none;border:0;text-align:left;padding:6px 0;font-weight:600;overflow-wrap:anywhere}
-.xrow .sel{width:9.5rem;max-width:45%}
+.xrow .nm{flex:1 1 100%}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%}
+.dc{min-height:44px;min-width:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.9rem}
+.dc.mode{margin-left:auto}.dc.mode~.dc.mode{margin-left:0}
+.dc[aria-pressed=true]{background:#FFE14D;border-color:#8a7500;color:#111}
+.dc.mode[aria-pressed=true]{background:#dfe6ea;border-color:#555}
+.g-custom{background:#D9D9D9}
 /* sheet */
 .veil{position:fixed;inset:0;background:var(--shade);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 .sheet{background:var(--bg);width:100%;max-width:520px;max-height:94%;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px))}
@@ -178,6 +184,7 @@ var RAW = [
 var WEIGHTED = /barbell|dumbbell|curl|press|row|pulldown|pushdown|deadlift|squat|kettlebell|carry|extension|calf|skull|sled|farmers|suitcase|lunge|bench|clean|snatch|bag|hammer|dips|get ups|lift/i;
 var NOTW = /band|wall sit|plank|hamstring curls\b.*nordic|nordic|clam|bird|flutter|crunch|ab wheel|push-ups|walk/i;
 var FREQ = {daily:'Every day (Mon–Fri)',mwf:'Mon · Wed · Fri',tt:'Tue · Thu',twice:'2× a week, my days',once:'1× a week, my day',off:'Not scheduled'};
+var LEGACY={daily:[1,2,3,4,5],mwf:[1,3,5],tt:[2,4]};
 var DAYN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function defaults(){
@@ -207,6 +214,11 @@ var PH = load(PKEY) || {};
   var gone=S.ex.filter(function(e){return e.name==='Dips'});
   gone.forEach(function(g){Object.keys(S.log).forEach(function(k){if(S.log[k][g.id]){delete S.log[k][g.id];if(!Object.keys(S.log[k]).length)delete S.log[k]}})});
   S.ex=S.ex.filter(function(e){return e.name!=='Dips'}); S.mig3=1; save(KEY,S); })();
+(function(){ if(S.mig5)return; var d={};defaults().forEach(function(e){d[e.name.toLowerCase()]=e.freq});
+  S.ex.forEach(function(e){var df=d[e.name.toLowerCase()];
+    if(e.freq==='daily'&&!e.days&&(df==='mwf'||df==='tt'))e.freq=df;
+    if(e.freq==='daily'||e.freq==='mwf'||e.freq==='tt')e.days=LEGACY[e.freq].slice()});
+  S.mig5=1; save(KEY,S); })();
 (function(){ if(S.mig4)return; S.ex.forEach(function(e){if(e.plan.timed==null)e.plan.timed=/\b(min|sec)\b/i.test(e.plan.reps||'')?1:0}); S.mig4=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
@@ -230,10 +242,26 @@ function checked(dk,id){var e=entry(dk,id);return e?e.sets.filter(Boolean).lengt
 function isDone(ex,dk){var p=planFor(ex,fromKey(dk).getDay(),dk);return checked(dk,ex.id)>=p.sets}
 function weekCount(ex,wk){return wk.filter(function(k){return isDone(ex,k)}).length}
 function scheduled(ex,dow){
-  if(ex.freq==='daily')return dow>=1&&dow<=5;
-  if(ex.freq==='mwf')return dow===1||dow===3||dow===5;
-  if(ex.freq==='tt')return dow===2||dow===4;
-  return false;
+  return fixedDays(ex).indexOf(dow)>=0;
+}
+function fixedDays(ex){
+  if(!(ex.freq==='daily'||ex.freq==='mwf'||ex.freq==='tt'||ex.freq==='custom'))return [];
+  return ex.days||LEGACY[ex.freq]||[];
+}
+function setDays(ex,d){
+  d=d.slice().sort();ex.days=d;
+  var k=d.join();
+  ex.freq=!d.length?'off':k==='1,2,3,4,5'?'daily':k==='1,3,5'?'mwf':k==='2,4'?'tt':'custom';
+}
+function schedHtml(e){
+  var fd=fixedDays(e),h='<div class="dchips" role="group" aria-label="Schedule for '+esc(e.name)+'">';
+  [1,2,3,4,5].forEach(function(d){
+    h+='<button class="dc" data-a="sd" data-v="'+e.id+'|'+d+'" aria-pressed="'+(fd.indexOf(d)>=0)+'">'+DAYN[d]+'</button>';
+  });
+  [['twice','2×'],['once','1×'],['off','Off']].forEach(function(m){
+    h+='<button class="dc mode" data-a="sm" data-v="'+e.id+'|'+m[0]+'" aria-pressed="'+(e.freq===m[0])+'" aria-label="'+FREQ[m[0]]+'">'+m[1]+'</button>';
+  });
+  return h+'</div>';
 }
 function summary(p){
   var s=p.sets+' × '+(p.reps||'–');
@@ -314,8 +342,7 @@ function viewSetup(){
     '<select class="sel" id="flt" aria-label="Filter">'+
     [['sched','Scheduled'],['off','Not scheduled'],['all','All']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
   h+='<div class="list">'+(list.length?list.map(function(e){
-    return '<div class="xrow"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button><select class="sel" data-a="freq" data-v="'+e.id+'" aria-label="Schedule for '+esc(e.name)+'">'+
-     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
+    return '<div class="xrow"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+schedHtml(e)+'</div>';
   }).join(''):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
   if(U.adding)h+='<input type="text" id="newname" class="sel" style="flex:1 1 180px" placeholder="Exercise name" aria-label="New exercise name"><button class="btn pri" data-a="addgo">Add</button><button class="btn" data-a="addno">Cancel</button>';
@@ -326,7 +353,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 19.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 20.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -376,8 +403,7 @@ function sheetHtml(){
     :'<div class="hint">Changes '+DAYN[+tgt]+' in every week. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
   h+='<label class="chk"><input type="checkbox" id="f-ut" data-a="ut"'+(e.plan.timed?' checked':'')+'> This exercise is timed (pick seconds or minutes)</label>';
   h+='<label class="chk"><input type="checkbox" id="f-uw" data-a="uw"'+(e.plan.weighted?' checked':'')+'> This exercise uses weight</label>';
-  h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
-    Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
+  h+='<div class="field" style="margin-top:14px"><label>Schedule</label>'+schedHtml(e)+'<div class="hint">Tap days to highlight them. 2× or 1× = you pick the days each week.</div></div>';
   h+='</div></div></div>';
   return h;
 }
@@ -460,7 +486,7 @@ function viewProgress(){
   return h;
 }
 /* ---------- weekly sheet: preview, print, text and email ---------- */
-var GCOL={daily:'FFFF00',mwf:'FF9933',tt:'92D050',twice:'FF99FF',once:'66FFFF'};
+var GCOL={daily:'FFFF00',mwf:'FF9933',tt:'92D050',twice:'FF99FF',once:'66FFFF',custom:'D9D9D9'};
 var GORDER=['daily','mwf','tt','twice','once'];
 var LEGEND=['Every Day','3X A Week (M,W,F)','2X A Week (Tu,Th)','2X A Week  Pick Days','1X A Week  Pick Day'];
 var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
@@ -636,6 +662,11 @@ app.addEventListener('click',function(ev){
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
   else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
+  else if(a==='sd'||a==='sm'){
+    var pr=v.split('|'),ex=byId(pr[0]);
+    if(a==='sd'){var d=+pr[1],cur=fixedDays(ex).slice(),ix=cur.indexOf(d);if(ix>=0)cur.splice(ix,1);else cur.push(d);setDays(ex,cur)}
+    else{ex.freq=pr[1];ex.days=[]}
+    persist();keepSheet();render()}
   else if(a==='day'){U.date=v;render()}
   else if(a==='open'){U.open=v;U.target='all';U.scope=weekOf(fromKey(U.date))[0]===weekOf(new Date())[0]?'all':'week';U._sheetScroll=0;render()}
   else if(a==='bigpic'){keepSheet();U.big=U.open;render()}
