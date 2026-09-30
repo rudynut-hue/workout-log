@@ -68,6 +68,9 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .row.done .badge{background:var(--ok);color:var(--surface);border-color:transparent}
 .row.dim{opacity:.6}
 .chip{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:1px}
+.rowwrap{display:flex;flex-direction:column;gap:4px}
+.rmbtn{align-self:flex-end;background:none;border:0;color:var(--muted);text-decoration:underline;font-weight:600;min-height:36px;padding:0 6px}
+.rmask{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .empty{color:var(--muted);padding:18px;border:1px dashed var(--line);border-radius:10px}
 .empty b{color:var(--ink)}
 .nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px))}
@@ -314,7 +317,10 @@ function viewToday(){
   else h+='<div class="list">'+sched.map(function(e){return rowHtml(e,dow)}).join('')+'</div>';
   if(flex.length){
     h+='<div class="sec"><h2>Pick your days</h2><small>counts reset every Monday</small></div><div class="list">'+
-      flex.map(function(e){return rowHtml(e,dow,wk)}).join('')+'</div>';
+      flex.map(function(e){
+        var rm=U.rmId===e.id?'<div class="rmask" role="alertdialog" aria-label="Remove '+esc(e.name)+'"><b>Are you sure you want to remove '+esc(e.name)+'?</b> It stays off your list until you add it back on the Exercises tab (choose Not scheduled, then set its schedule). Your history is kept.<div class="tools"><button class="btn pri" data-a="rmgo" data-v="'+e.id+'">Yes, remove</button><button class="btn" data-a="rmno">Cancel</button></div></div>'
+          :'<button class="rmbtn" data-a="rmask" data-v="'+e.id+'" aria-label="Remove '+esc(e.name)+'">Remove</button>';
+        return '<div class="rowwrap">'+rowHtml(e,dow,wk)+rm+'</div>'}).join('')+'</div>';
   }
   return h;
 }
@@ -355,7 +361,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 22.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 23.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -706,6 +712,9 @@ app.addEventListener('click',function(ev){
   else if(a==='gobackup'){U.tab='setup';U.showBackup=true;render();window.scrollTo(0,document.body.scrollHeight)}
   else if(a==='clearask'){U.confirm=v;U.note='';render()}
   else if(a==='clearno'){U.confirm=null;render()}
+  else if(a==='rmask'){U.rmId=v;render()}
+  else if(a==='rmno'){U.rmId=null;render()}
+  else if(a==='rmgo'){var re=byId(v);re.freq='off';re.days=[];U.rmId=null;persist();render()}
   else if(a==='clearlog'){S.log={};persist();U.confirm=null;U.note='History cleared. Your exercises, groups and plans are unchanged.';render()}
   else if(a==='clearall'){S={ex:defaults(),log:{},next:1000,mig2:1};PH={};save(PKEY,PH);persist();U.confirm=null;U.filter='sched';U.q='';U.note='Everything was reset to the original list.';render()}
   else if(a==='backup'){U.showBackup=!U.showBackup;render()}
