@@ -172,7 +172,7 @@ var RAW = [
  ['Planks',3,'30 sec',0,'daily'],['Star Excursion Drill',3,'8-10',0,'daily'],['Medium Screw Transfer',3,'8-10',1,'daily'],
  ['mwf','Bucket Pull Vertical|Bucket Pull Horizontal|Ladder Climbs|Farmers Carry|Lat Pulldowns|Seated Rows|Barbell Push-Ups|Tricep Pushdowns|Stair Climbing Intervals|Easy Bar Curls|I\u2019s, Y\u2019s & T\u2019s'],
  ['tt','Slant Board Squats|One Arm Rows|Med-X Core Isolator|Champagne Press|Lateral Band Walks|Leg Extensions|Hamstring Curls|Clam Shells|Reverse Pulldowns|Calf Raises|Sledgehammer & Tire|Retro Band Walks'],
- ['twice','PVC Pipe Walk Ups|Concrete Bag Transfer|Med-X Lumbar Machine|Pallet Step-Ups|Twist Crunches|Bicep Curls|Hammer Curls|Med-X Torso Rotation|Wall Sits|Ab Wheel|Dumbbell Incline Bench|Dumbbell Shoulder Press|Lunges|Kettlebell Swings|Suitcase Carry|Flutter Kicks & Crossovers|Tib Bar|Hexagon Drill|Inverted Barbell Rows (Pronated and Supinated)|Bird Dogs|Forearm Roller|Dips'],
+ ['twice','PVC Pipe Walk Ups|Concrete Bag Transfer|Med-X Lumbar Machine|Pallet Step-Ups|Twist Crunches|Bicep Curls|Hammer Curls|Med-X Torso Rotation|Wall Sits|Ab Wheel|Dumbbell Incline Bench|Dumbbell Shoulder Press|Lunges|Kettlebell Swings|Suitcase Carry|Flutter Kicks & Crossovers|Tib Bar|Hexagon Drill|Inverted Barbell Rows (Pronated and Supinated)|Bird Dogs|Forearm Roller'],
  ['once','Deadlift|Barbell Incline Press|Barbell Shoulder Press|Barbell Bent Over Rows|Barbell Back or Front Squats|Unilateral Sit To Stand Squats|Nordic Hamstring Curls|Turkish Get Ups|Plyometric Variations|Dumbbell Cleans and/or Snatches|Skull Crushers|Neutral Grip Incline Bench|Neutral Grip Shoulder Press']
 ];
 var WEIGHTED = /barbell|dumbbell|curl|press|row|pulldown|pushdown|deadlift|squat|kettlebell|carry|extension|calf|skull|sled|farmers|suitcase|lunge|bench|clean|snatch|bag|hammer|dips|get ups|lift/i;
@@ -190,6 +190,7 @@ function defaults(){
       });
     } else out.push({id:'e'+(n++),name:r[0],freq:r[4],plan:{sets:r[1],reps:r[2],weight:'',weighted:r[3]},ov:{}});
   });
+  out.forEach(function(e,i){e.pg=Math.floor((i>=58?i+1:i)/14)});
   return out;
 }
 
@@ -201,6 +202,11 @@ var S = load(KEY) || {ex:defaults(),log:{},next:1000};
 var PH = load(PKEY) || {};
 (function(){ if(S.mig2)return; var d={};defaults().forEach(function(e){d[e.name.toLowerCase()]=e.freq});
   S.ex.forEach(function(e){ if(e.freq==='off'&&d[e.name.toLowerCase()])e.freq=d[e.name.toLowerCase()] }); S.mig2=1; save(KEY,S); })();
+(function(){ if(S.mig3)return;
+  S.ex.forEach(function(e,i){if(e.pg==null&&/^e\d+$/.test(e.id)&&+e.id.slice(1)<1000)e.pg=Math.floor(i/14)});
+  var gone=S.ex.filter(function(e){return e.name==='Dips'});
+  gone.forEach(function(g){Object.keys(S.log).forEach(function(k){if(S.log[k][g.id]){delete S.log[k][g.id];if(!Object.keys(S.log[k]).length)delete S.log[k]}})});
+  S.ex=S.ex.filter(function(e){return e.name!=='Dips'}); S.mig3=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -457,7 +463,7 @@ function weekModel(mon){
   var list=S.ex.filter(function(e){return e.freq!=='off'||did(e)});
   var sheets=[],pageNums=[];
   for(var pg=0;pg*14<S.ex.length;pg++){
-    var rows=list.filter(function(e){return Math.floor(S.ex.indexOf(e)/14)===pg}).map(function(e){
+    var rows=list.filter(function(e){return (e.pg!=null?e.pg:Math.floor(S.ex.indexOf(e)/14))===pg}).map(function(e){
       var g=e.freq==='off'?'':e.freq;
       return {name:e.name,group:g,amount:amountText(weekAll(e,dates[0])),
         sched:dates.map(function(k){return scheduled(e,fromKey(k).getDay())}),
@@ -585,7 +591,7 @@ function wkAction(a){
   }
 }
 /* ---------- exercise photos (Free Exercise DB, public domain) ---------- */
-var PICS={"Treadmill": "Walking_Treadmill", "Sled Push / Pull": "Sled_Push", "Planks": "Plank", "Theraband Bilateral External Rotation": "External_Rotation_with_Band", "Farmers Carry": "Farmers_Walk", "Lat Pulldowns": "Wide-Grip_Lat_Pulldown", "Seated Rows": "Seated_Cable_Rows", "Tricep Pushdowns": "Triceps_Pushdown", "Easy Bar Curls": "EZ-Bar_Curl", "One Arm Rows": "One-Arm_Dumbbell_Row", "Leg Extensions": "Leg_Extensions", "Hamstring Curls": "Seated_Leg_Curl", "Reverse Pulldowns": "Underhand_Cable_Pulldowns", "Calf Raises": "Standing_Calf_Raises", "Sledgehammer & Tire": "Sledgehammer_Swings", "Pallet Step-Ups": "Dumbbell_Step_Ups", "Twist Crunches": "Cross-Body_Crunch", "Bicep Curls": "Dumbbell_Bicep_Curl", "Hammer Curls": "Hammer_Curls", "Ab Wheel": "Ab_Roller", "Dumbbell Incline Bench": "Incline_Dumbbell_Press", "Dumbbell Shoulder Press": "Dumbbell_Shoulder_Press", "Lunges": "Dumbbell_Lunges", "Kettlebell Swings": "One-Arm_Kettlebell_Swings", "Flutter Kicks & Crossovers": "Flutter_Kicks", "Inverted Barbell Rows (Pronated and Supinated)": "Inverted_Row", "Forearm Roller": "Wrist_Roller", "Dips": "Parallel_Bar_Dip", "Deadlift": "Barbell_Deadlift", "Barbell Incline Press": "Barbell_Incline_Bench_Press_-_Medium_Grip", "Barbell Shoulder Press": "Barbell_Shoulder_Press", "Barbell Bent Over Rows": "Bent_Over_Barbell_Row", "Barbell Back or Front Squats": "Barbell_Squat", "Turkish Get Ups": "Kettlebell_Turkish_Get-Up_Squat_style", "Dumbbell Cleans and/or Snatches": "Dumbbell_Clean", "Skull Crushers": "EZ-Bar_Skullcrusher", "Neutral Grip Incline Bench": "Hammer_Grip_Incline_DB_Bench_Press", "Lateral Band Walks": "Monster_Walk"};
+var PICS={"Treadmill": "Walking_Treadmill", "Sled Push / Pull": "Sled_Push", "Planks": "Plank", "Theraband Bilateral External Rotation": "External_Rotation_with_Band", "Farmers Carry": "Farmers_Walk", "Lat Pulldowns": "Wide-Grip_Lat_Pulldown", "Seated Rows": "Seated_Cable_Rows", "Tricep Pushdowns": "Triceps_Pushdown", "Easy Bar Curls": "EZ-Bar_Curl", "One Arm Rows": "One-Arm_Dumbbell_Row", "Leg Extensions": "Leg_Extensions", "Hamstring Curls": "Seated_Leg_Curl", "Reverse Pulldowns": "Underhand_Cable_Pulldowns", "Calf Raises": "Standing_Calf_Raises", "Sledgehammer & Tire": "Sledgehammer_Swings", "Pallet Step-Ups": "Dumbbell_Step_Ups", "Twist Crunches": "Cross-Body_Crunch", "Bicep Curls": "Dumbbell_Bicep_Curl", "Hammer Curls": "Hammer_Curls", "Ab Wheel": "Ab_Roller", "Dumbbell Incline Bench": "Incline_Dumbbell_Press", "Dumbbell Shoulder Press": "Dumbbell_Shoulder_Press", "Lunges": "Dumbbell_Lunges", "Kettlebell Swings": "One-Arm_Kettlebell_Swings", "Flutter Kicks & Crossovers": "Flutter_Kicks", "Inverted Barbell Rows (Pronated and Supinated)": "Inverted_Row", "Forearm Roller": "Wrist_Roller", "Deadlift": "Barbell_Deadlift", "Barbell Incline Press": "Barbell_Incline_Bench_Press_-_Medium_Grip", "Barbell Shoulder Press": "Barbell_Shoulder_Press", "Barbell Bent Over Rows": "Bent_Over_Barbell_Row", "Barbell Back or Front Squats": "Barbell_Squat", "Turkish Get Ups": "Kettlebell_Turkish_Get-Up_Squat_style", "Dumbbell Cleans and/or Snatches": "Dumbbell_Clean", "Skull Crushers": "EZ-Bar_Skullcrusher", "Neutral Grip Incline Bench": "Hammer_Grip_Incline_DB_Bench_Press", "Lateral Band Walks": "Monster_Walk"};
 function picsFor(e){var id=PICS[e.name];return id?['pics/'+id+'/0.jpg','pics/'+id+'/1.jpg']:null}
 function slotHtml(e){
   var pc=picsFor(e);
