@@ -344,7 +344,7 @@ function viewSetup(){
     if(f==='sched')return e.freq!=='off';
     if(f==='off')return e.freq==='off';
     return true;
-  });
+  }).sort(function(x,y){return x.name.localeCompare(y.name,undefined,{sensitivity:'base',ignorePunctuation:true})});
   var offN=S.ex.filter(function(e){return e.freq==='off'}).length;
   var h='<div class="top"><h1>Exercises</h1><div class="sub">'+S.ex.length+' total</div></div>';
   if(offN&&f!=='off')h+='<div class="empty" style="margin-top:14px"><b>'+offN+' exercises are not scheduled yet.</b> <button class="link" data-a="filter" data-v="off">Show them</button> and pick a group for each.</div>';
@@ -364,7 +364,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 24.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 25.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
