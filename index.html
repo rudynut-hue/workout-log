@@ -209,10 +209,18 @@ function fromKey(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
 function weekOf(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());var off=(x.getDay()+6)%7;x.setDate(x.getDate()-off);var a=[];for(var i=0;i<5;i++){a.push(dkey(x));x.setDate(x.getDate()+1)}return a}
 
 /* ---------- model helpers ---------- */
-function planFor(ex,dow){var o=ex.ov&&ex.ov[dow]||{};var p={};for(var k in ex.plan)p[k]=ex.plan[k];for(var k2 in o)p[k2]=o[k2];return p}
+function planFor(ex,dow,dk){
+  var p={},k,o=ex.ov&&ex.ov[dow];
+  for(k in ex.plan)p[k]=ex.plan[k];
+  if(o)for(k in o)p[k]=o[k];
+  var w=dk&&ex.wk&&ex.wk[weekOf(fromKey(dk))[0]];
+  if(w){if(w.all)for(k in w.all)p[k]=w.all[k];if(w[dow])for(k in w[dow])p[k]=w[dow][k]}
+  return p;
+}
+function weekAll(ex,mon){var p={},k,w=ex.wk&&ex.wk[mon];for(k in ex.plan)p[k]=ex.plan[k];if(w&&w.all)for(k in w.all)p[k]=w.all[k];return p}
 function entry(dk,id){return S.log[dk]&&S.log[dk][id]}
 function checked(dk,id){var e=entry(dk,id);return e?e.sets.filter(Boolean).length:0}
-function isDone(ex,dk){var p=planFor(ex,fromKey(dk).getDay());return checked(dk,ex.id)>=p.sets}
+function isDone(ex,dk){var p=planFor(ex,fromKey(dk).getDay(),dk);return checked(dk,ex.id)>=p.sets}
 function weekCount(ex,wk){return wk.filter(function(k){return isDone(ex,k)}).length}
 function scheduled(ex,dow){
   if(ex.freq==='daily')return dow>=1&&dow<=5;
@@ -254,6 +262,10 @@ function viewToday(){
   var h='<div class="top"><h1>Workout Log</h1><div class="sub">'+d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+'</div></div>';
   var logDays=Object.keys(S.log).length,ago=S.lastBackup?(Date.now()-S.lastBackup)/864e5:Infinity;
   if(logDays>=5&&ago>14)h+='<div class="empty" style="margin-top:12px"><b>'+(S.lastBackup?'It has been '+Math.floor(ago)+' days since your last backup.':'You haven\u2019t backed up your log yet.')+'</b> A backup lets you restore your workouts if this phone clears the app. <button class="link" data-a="gobackup">Back up now</button></div>';
+  var curMon=weekOf(new Date())[0],wm=wk[0];
+  var wlbl=wm===curMon?'This week':wm===shiftWeek(curMon,1)?'Next week':wm===shiftWeek(curMon,-1)?'Last week':'Week of '+md(wm);
+  h+='<div class="wknav"><button class="btn" data-a="tprev" aria-label="Previous week">\u2039</button><b>'+wlbl+'</b><button class="btn" data-a="tnext" aria-label="Next week">\u203a</button></div>';
+  if(wm!==curMon)h+='<div class="hint" style="margin:-6px 0 8px;text-align:center"><button class="link" data-a="tnow">Back to this week</button></div>';
   h+='<div class="days" role="group" aria-label="Day of this week">'+wk.map(function(k){
     var dd=fromKey(k),any=S.ex.some(function(e){return checked(k,e.id)>0});
     return '<button class="day" data-a="day" data-v="'+k+'" aria-pressed="'+(k===U.date)+'"><b>'+DAYN[dd.getDay()]+'</b><span>'+dd.getDate()+'</span><i class="'+(any?'has':'')+'"></i></button>';
@@ -271,11 +283,11 @@ function viewToday(){
   return h;
 }
 function rowHtml(e,dow,wk){
-  var p=planFor(e,dow),n=checked(U.date,e.id),done=n>=p.sets;
+  var p=planFor(e,dow,U.date),n=checked(U.date,e.id),done=n>=p.sets;
   var extra='',dim='';
   if(wk){
     var target=e.freq==='twice'?2:1,c=weekCount(e,wk);
-    extra='<span class="chip">'+c+'/'+target+' this week</span>';
+    extra='<span class="chip">'+c+'/'+target+(wk[0]===weekOf(new Date())[0]?' this week':' that week')+'</span>';
     if(c>=target&&!done)dim=' dim';
   }
   return '<button class="row'+(done?' done':'')+dim+'" data-a="open" data-v="'+e.id+'"><div class="txt"><div class="nm">'+esc(e.name)+extra+'</div><div class="pl">'+esc(summary(p))+'</div></div><div class="badge">'+(done?'✓':n+'/'+p.sets)+'</div></button>';
@@ -316,7 +328,7 @@ function viewSetup(){
 }
 function sheetHtml(){
   var e=byId(U.open);if(!e)return '';
-  var d=fromKey(U.date),dow=d.getDay(),p=planFor(e,dow),n=checked(U.date,e.id);
+  var d=fromKey(U.date),dow=d.getDay(),p=planFor(e,dow,U.date),n=checked(U.date,e.id);
   var last=lastTime(e);
   var h='<div class="veil" data-a="veil"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="'+esc(e.name)+'">';
   h+='<div class="sh-head"><h2>'+esc(e.name)+'</h2><button class="x" data-a="close" aria-label="Close">✕</button></div>';
@@ -333,11 +345,16 @@ function sheetHtml(){
   h+='</div></div>';
   h+=historyHtml(e);
   // plan editor
-  var tgt=U.target,base=tgt==='all'?e.plan:planFor(e,+tgt);
-  h+='<div class="plan"><h3>Edit plan</h3><div class="tg" role="group" aria-label="Which days to edit">'+
-    '<button data-a="target" data-v="all" aria-pressed="'+(tgt==='all')+'">Every day</button>'+
+  var tgt=U.target,wkK=weekOf(fromKey(U.date)),wkm=wkK[0],inWk=U.scope==='week',wv=(e.wk&&e.wk[wkm])||{};
+  var base=inWk?(tgt==='all'?weekAll(e,wkm):planFor(e,+tgt,wkK[+tgt-1])):(tgt==='all'?e.plan:planFor(e,+tgt));
+  var dotOf=function(k){return inWk?!!wv[k]:!!(e.ov&&e.ov[k])};
+  h+='<div class="plan"><h3>Edit plan</h3><div class="tg" role="group" aria-label="Which weeks to change">'+
+    '<button data-a="scope" data-v="all" aria-pressed="'+(!inWk)+'">All weeks</button>'+
+    '<button data-a="scope" data-v="week" aria-pressed="'+inWk+'">Week of '+md(wkm)+' only</button></div>'+
+    '<div class="tg" role="group" aria-label="Which days to edit">'+
+    '<button data-a="target" data-v="all" class="'+(dotOf('all')?'ov':'')+'" aria-pressed="'+(tgt==='all')+'">Every day</button>'+
     [1,2,3,4,5].map(function(k){
-      return '<button data-a="target" data-v="'+k+'" class="'+(e.ov&&e.ov[k]?'ov':'')+'" aria-pressed="'+(tgt===String(k))+'">'+DAYN[k]+'</button>';
+      return '<button data-a="target" data-v="'+k+'" class="'+(dotOf(k)?'ov':'')+'" aria-pressed="'+(tgt===String(k))+'">'+DAYN[k]+'</button>';
     }).join('')+'</div>';
   h+='<div class="grid3"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+
@@ -348,8 +365,10 @@ function sheetHtml(){
     h+='<div class="field"><label for="f-w">Weight</label><select id="f-w" data-a="pf" data-v="weight">'+opts+'</select></div>';
   } else h+='<div></div>';
   h+='</div>';
-  h+=tgt==='all'?'<div class="hint">Applies to every day unless a day has its own plan (marked with a yellow dot).</div>'
-    :'<div class="hint">Only changes '+DAYN[+tgt]+'. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
+  if(inWk)h+=tgt==='all'?'<div class="hint">Only changes the week of '+md(wkm)+'. Other weeks keep their plan.'+(wv.all?' <button class="link" data-a="resetday">Use the regular plan for this week</button>':'')+'</div>'
+    :'<div class="hint">Only changes '+DAYN[+tgt]+' of the week of '+md(wkm)+'.'+(wv[tgt]?' <button class="link" data-a="resetday">Undo this day</button>':'')+'</div>';
+  else h+=tgt==='all'?'<div class="hint">Applies to every week, on every day unless a day has its own plan (marked with a yellow dot).</div>'
+    :'<div class="hint">Changes '+DAYN[+tgt]+' in every week. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
   h+='<label class="chk"><input type="checkbox" id="f-uw" data-a="uw"'+(e.plan.weighted?' checked':'')+'> This exercise uses weight</label>';
   h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
@@ -495,7 +514,7 @@ window.__wl={drawFor:drawFor,TPL:TPL};
 /* ---------- history and progress ---------- */
 function hist(e){
   return Object.keys(S.log).sort().filter(function(k){var en=S.log[k][e.id];return en&&en.sets.some(Boolean)}).map(function(k){
-    var en=S.log[k][e.id],sn=en.snap||planFor(e,fromKey(k).getDay());
+    var en=S.log[k][e.id],sn=en.snap||planFor(e,fromKey(k).getDay(),k);
     return {k:k,done:en.sets.filter(Boolean).length,snap:sn};
   });
 }
@@ -558,7 +577,7 @@ function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(
 function amountText(p){return (p.sets>1&&/^\d/.test(p.reps||'')?p.sets+'X':'')+(p.reps||'')+(p.weighted&&p.weight!==''&&p.weight!=null?' @ '+p.weight+' lb':'')}
 function cellText(e,k){
   var n=checked(k,e.id);if(!n)return '';
-  var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay());
+  var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay(),k);
   return (n>=sn.sets?'✓ ':n+'/'+sn.sets+' ')+amountText(sn);
 }
 function weekModel(mon){
@@ -569,7 +588,7 @@ function weekModel(mon){
   for(var pg=0;pg*14<S.ex.length;pg++){
     var rows=list.filter(function(e){return Math.floor(S.ex.indexOf(e)/14)===pg}).map(function(e){
       var g=e.freq==='off'?'':e.freq;
-      return {name:e.name,group:g,amount:amountText(e.plan),
+      return {name:e.name,group:g,amount:amountText(weekAll(e,dates[0])),
         sched:dates.map(function(k){return scheduled(e,fromKey(k).getDay())}),
         cells:dates.map(function(k){return cellText(e,k)})};
     });
@@ -702,16 +721,20 @@ app.addEventListener('click',function(ev){
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
   if(a==='tab'){U.note='';U.confirm=null;U.tab=v;U.open=null;render()}
-  else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U._sheetScroll=0;render()}
+  else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U.scope='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
   else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
   else if(a==='day'){U.date=v;render()}
-  else if(a==='open'){U.open=v;U.target='all';U._sheetScroll=0;render()}
+  else if(a==='open'){U.open=v;U.target='all';U.scope=weekOf(fromKey(U.date))[0]===weekOf(new Date())[0]?'all':'week';U._sheetScroll=0;render()}
+  else if(a==='scope'){keepSheet();U.scope=v;U.target='all';render()}
+  else if(a==='tprev'){U.date=shiftWeek(U.date,-1);render()}
+  else if(a==='tnext'){U.date=shiftWeek(U.date,1);render()}
+  else if(a==='tnow'){var nn=new Date(),gg=nn.getDay();if(gg===6)nn.setDate(nn.getDate()-1);else if(gg===0)nn.setDate(nn.getDate()-2);U.date=dkey(nn);render()}
   else if(a==='close'){U.open=null;U._sheetScroll=0;render()}
   else if(a==='set'){
     keepSheet();
-    var e=byId(U.open),dow=fromKey(U.date).getDay(),p=planFor(e,dow);
+    var e=byId(U.open),dow=fromKey(U.date).getDay(),p=planFor(e,dow,U.date);
     S.log[U.date]=S.log[U.date]||{};
     var en=S.log[U.date][e.id]=S.log[U.date][e.id]||{sets:[false,false,false,false]};
     en.sets[+v]=!en.sets[+v];
@@ -720,7 +743,10 @@ app.addEventListener('click',function(ev){
   }
   else if(a==='rmphoto'){keepSheet();delete PH[U.open];save(PKEY,PH);render()}
   else if(a==='target'){keepSheet();U.target=v;render()}
-  else if(a==='resetday'){keepSheet();var e2=byId(U.open);delete e2.ov[U.target];U.target='all';persist();render()}
+  else if(a==='resetday'){keepSheet();var e2=byId(U.open);
+    if(U.scope==='week'){var wk2=weekOf(fromKey(U.date))[0];if(e2.wk&&e2.wk[wk2]){delete e2.wk[wk2][U.target];if(!Object.keys(e2.wk[wk2]).length)delete e2.wk[wk2]}}
+    else delete e2.ov[U.target];
+    U.target='all';persist();render()}
   else if(a==='filter'){U.filter=v;render()}
   else if(a==='add'){U.adding=true;render();var i=document.getElementById('newname');if(i)i.focus()}
   else if(a==='addno'){U.adding=false;render()}
@@ -758,7 +784,12 @@ app.addEventListener('change',function(ev){
   if(a==='pf'){
     keepSheet();
     var e=byId(U.open),f=t.getAttribute('data-v'),val=f==='sets'?+t.value:t.value;
-    if(U.target==='all')e.plan[f]=val;
+    if(U.scope==='week'){
+      var wkKey=weekOf(fromKey(U.date)),tk=U.target;e.wk=e.wk||{};var wo=e.wk[wkKey[0]]=e.wk[wkKey[0]]||{};
+      if(!wo[tk]){var cw=tk==='all'?weekAll(e,wkKey[0]):planFor(e,+tk,wkKey[+tk-1]);wo[tk]={sets:cw.sets,reps:cw.reps,weight:cw.weight}}
+      wo[tk][f]=val;
+    }
+    else if(U.target==='all')e.plan[f]=val;
     else{e.ov[U.target]=e.ov[U.target]||{};
       if(!e.ov[U.target].hasOwnProperty('sets')){var cur=planFor(e,+U.target);e.ov[U.target]={sets:cur.sets,reps:cur.reps,weight:cur.weight}}
       e.ov[U.target][f]=val}
