@@ -450,6 +450,7 @@ var GCOL={daily:'FFFF00',mwf:'FF9933',tt:'92D050',twice:'FF99FF',once:'66FFFF'};
 var GORDER=['daily','mwf','tt','twice','once'];
 var LEGEND=['Every Day','3X A Week (M,W,F)','2X A Week (Tu,Th)','2X A Week  Pick Days','1X A Week  Pick Day'];
 var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+function landDate(k){var m=weekOf(fromKey(k))[0];if(m!==weekOf(new Date())[0])return m;var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)}
 function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(d)}
 function amountText(p){return (p.sets>1&&/^\d/.test(p.reps||'')?p.sets+'X':'')+(p.reps||'')+(p.weighted&&p.weight!==''&&p.weight!=null?' @ '+p.weight+' lb':'')}
 function cellText(e,k){
@@ -626,8 +627,8 @@ app.addEventListener('click',function(ev){
   else if(a==='bigpic'){keepSheet();U.big=U.open;render()}
   else if(a==='lbclose'){keepSheet();U.big=null;render()}
   else if(a==='scope'){keepSheet();U.scope=v;U.target='all';render()}
-  else if(a==='tprev'){U.date=shiftWeek(U.date,-1);render()}
-  else if(a==='tnext'){U.date=shiftWeek(U.date,1);render()}
+  else if(a==='tprev'){U.date=landDate(shiftWeek(U.date,-1));render()}
+  else if(a==='tnext'){U.date=landDate(shiftWeek(U.date,1));render()}
   else if(a==='tnow'){var nn=new Date(),gg=nn.getDay();if(gg===6)nn.setDate(nn.getDate()-1);else if(gg===0)nn.setDate(nn.getDate()-2);U.date=dkey(nn);render()}
   else if(a==='close'){U.open=null;U._sheetScroll=0;render()}
   else if(a==='set'){
