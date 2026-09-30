@@ -301,6 +301,11 @@ function viewSetup(){
       '<textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
+  h+='<div class="sec"><h2>Start over</h2></div>';
+  if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
+  if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
+  else if(U.confirm==='all')h+='<div class="empty"><b>Reset everything?</b> This erases your history, photos, and any changes to groups, plans and added exercises, and puts the original list back. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearall">Yes, reset everything</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
+  else h+='<div class="tools"><button class="btn" data-a="clearask" data-v="log">Clear my workout history</button><button class="btn" data-a="clearask" data-v="all">Reset everything</button></div>';
   return h;
 }
 function sheetHtml(){
@@ -690,7 +695,7 @@ app.addEventListener('click',function(ev){
   var a=t.getAttribute('data-a'),v=t.getAttribute('data-v');
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
-  if(a==='tab'){U.tab=v;U.open=null;render()}
+  if(a==='tab'){U.note='';U.confirm=null;U.tab=v;U.open=null;render()}
   else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
@@ -718,6 +723,10 @@ app.addEventListener('click',function(ev){
     if(nm){S.ex.push({id:'e'+(S.next++),name:nm,freq:'off',plan:{sets:3,reps:'8-10',weight:'',weighted:WEIGHTED.test(nm)?1:0},ov:{}});U.adding=false;U.filter='off';U.q='';persist()}
     render();
   }
+  else if(a==='clearask'){U.confirm=v;U.note='';render()}
+  else if(a==='clearno'){U.confirm=null;render()}
+  else if(a==='clearlog'){S.log={};persist();U.confirm=null;U.note='History cleared. Your exercises, groups and plans are unchanged.';render()}
+  else if(a==='clearall'){S={ex:defaults(),log:{},next:1000,mig2:1};PH={};save(PKEY,PH);persist();U.confirm=null;U.filter='sched';U.q='';U.note='Everything was reset to the original list.';render()}
   else if(a==='backup'){U.showBackup=!U.showBackup;render()}
   else if(a==='copy'){
     var ta=document.getElementById('bk');ta.select();
