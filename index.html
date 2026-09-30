@@ -199,7 +199,7 @@ function defaults(){
         var w = WEIGHTED.test(nm) && !NOTW.test(nm) ? 1 : 0;
         out.push({id:'e'+(n++),name:nm,freq:r[0],plan:{sets:3,reps:'8-10',weight:'',weighted:w,timed:0},ov:{}});
       });
-    } else out.push({id:'e'+(n++),name:r[0],freq:r[4],plan:{sets:r[1],reps:r[2],weight:'',weighted:r[3],timed:/min|sec/i.test(r[2])?1:0},ov:{}});
+    } else out.push({id:'e'+(n++),name:r[0],freq:r[4],plan:{sets:r[1],reps:r[2],weight:'',weighted:r[3],timed:/min|sec/i.test(r[2])?1:0,tunit:/sec/i.test(r[2])?'sec':/min/i.test(r[2])?'min':''},ov:{}});
   });
   out.forEach(function(e,i){e.pg=Math.floor((i>=58?i+1:i)/14)});
   return out;
@@ -224,6 +224,9 @@ var PH = load(PKEY) || {};
     if(e.freq==='daily'||e.freq==='mwf'||e.freq==='tt')e.days=LEGACY[e.freq].slice()});
   S.mig5=1; save(KEY,S); })();
 (function(){ if(S.mig4)return; S.ex.forEach(function(e){if(e.plan.timed==null)e.plan.timed=/\b(min|sec)\b/i.test(e.plan.reps||'')?1:0}); S.mig4=1; save(KEY,S); })();
+(function(){ if(S.mig6)return;
+  S.ex.forEach(function(e){if(e.plan.timed&&!e.plan.tunit){var r=e.plan.reps||'';e.plan.tunit=/sec/i.test(r)?'sec':/min/i.test(r)?'min':''}});
+  S.mig6=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -361,7 +364,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 23.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 24.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -400,7 +403,7 @@ function sheetHtml(){
     }).join('')+'</div>';
   h+='<div class="grid3"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+
-    (e.plan.timed?timeField(base.reps):'<div class="field"><label for="f-reps">Reps</label><input id="f-reps" data-a="pf" data-v="reps" value="'+esc(base.reps)+'" autocomplete="off"></div>');
+    (e.plan.timed?timeField(base.reps,e.plan.tunit):'<div class="field"><label for="f-reps">Reps</label><input id="f-reps" data-a="pf" data-v="reps" value="'+esc(base.reps)+'" autocomplete="off"></div>');
   if(e.plan.weighted){
     var opts='<option value="">Not set</option>';
     for(var w=5;w<=300;w+=5)opts+='<option value="'+w+'"'+(String(base.weight)===String(w)?' selected':'')+'>'+w+' lb</option>';
@@ -418,16 +421,16 @@ function sheetHtml(){
   h+='</div></div></div>';
   return h;
 }
-function timeField(cur){
+function timeField(cur,unit){
   function secLabel(n){var m=Math.floor(n/60),r=n%60;return m?(m+' min'+(r?' '+r+' sec':'')):r+' sec'}
   var o='',secs=[],mins=[],n,all;
-  for(n=5;n<=180;n+=5)secs.push(secLabel(n));
+  for(n=15;n<=180;n+=5)secs.push(secLabel(n));
   for(n=5;n<=60;n+=5)mins.push(n+' min');
-  all=secs.concat(mins);
+  all=unit==='sec'?secs:unit==='min'?mins:secs.concat(mins);
   if(cur&&all.indexOf(cur)<0)o+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
   else if(!cur)o+='<option value="" selected>Not set</option>';
   function grp(t,l){return '<optgroup label="'+t+'">'+l.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('')+'</optgroup>'}
-  o+=grp('Seconds (up to 3 min)',secs)+grp('Minutes',mins);
+  o+=unit==='sec'?secs.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join(''):unit==='min'?mins.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join(''):grp('Seconds (up to 3 min)',secs)+grp('Minutes',mins);
   return '<div class="field"><label for="f-reps">Time</label><select id="f-reps" data-a="pf" data-v="reps">'+o+'</select></div>';
 }
 function lastTime(e){
