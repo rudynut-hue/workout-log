@@ -227,6 +227,9 @@ var PH = load(PKEY) || {};
 (function(){ if(S.mig6)return;
   S.ex.forEach(function(e){if(e.plan.timed&&!e.plan.tunit){var r=e.plan.reps||'';e.plan.tunit=/sec/i.test(r)?'sec':/min/i.test(r)?'min':''}});
   S.mig6=1; save(KEY,S); })();
+(function(){ if(S.mig7)return;
+  S.ex.forEach(function(e){if(/^(nustep|arm bike|treadmill)$/i.test(e.name)){e.plan.timed=1;e.plan.tunit='min';if(!/min/i.test(e.plan.reps||''))e.plan.reps='10 min'}});
+  S.mig7=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -364,7 +367,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 28.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 29.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
