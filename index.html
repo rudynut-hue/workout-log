@@ -241,6 +241,13 @@ var PH = load(PKEY) || {};
 (function(){ if(S.mig9)return;
   S.ex.forEach(function(e){if(/^box lift and carry$/i.test(e.name)){e.plan.shelf=1;if(e.plan.shelves==null){e.plan.shelves='';e.plan.shelves2=''}}});
   S.mig9=1; save(KEY,S); })();
+(function(){ if(S.mig10)return;
+  S.ex.forEach(function(e){if(/^star excursion drill$/i.test(e.name)){
+    e.plan.setsonly=1;e.plan.sets=2;e.plan.reps='';e.plan.weighted=0;e.plan.timed=0;
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].sets!=null)e.ov[k].sets=2});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].sets!=null)e.wk[m][k].sets=2})});
+  }});
+  S.mig10=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -286,6 +293,7 @@ function schedHtml(e){
 }
 function total(p){return (+p.sets||0)+(p.two?(+p.sets2||0):0)}
 function summary(p){
+  if(p.setsonly)return p.sets+(+p.sets===1?' set':' sets');
   var s=p.sets+' × '+(p.reps||'–')+(p.shelf&&p.shelves?' ('+p.shelves+' sh)':'');
   if(p.weighted&&p.weight!==''&&p.weight!=null)s+=' @ '+p.weight+' lb';
   if(p.two&&+p.sets2>0){s+=' + '+p.sets2+' × '+(p.reps2||'–')+(p.shelf&&p.shelves2?' ('+p.shelves2+' sh)':'');if(p.weighted&&p.weight2!==''&&p.weight2!=null)s+=' @ '+p.weight2+' lb'}
@@ -380,7 +388,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 34.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 35.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -427,7 +435,7 @@ function sheetHtml(){
     }).join('')+'</div>';
   h+='<div class="grid3'+(e.plan.shelf?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves,'shelves'):'')+
-    (e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two));
+    (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two));
   if(e.plan.weighted){
     var opts=wtOpts(base.weight,wtMin(e));
     h+='<div class="field"><label for="f-w">Weight</label><select id="f-w" data-a="pf" data-v="weight">'+opts+'</select></div>';
@@ -545,7 +553,7 @@ var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 function landDate(k){var m=weekOf(fromKey(k))[0];if(m!==weekOf(new Date())[0])return m;var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)}
 function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(d)}
 function amountOne(sets,reps,wt,weighted,sh){return (sets>1&&/^\d/.test(reps||'')?sets+'X':'')+(reps||'')+(sh?' ('+sh+' sh)':'')+(weighted&&wt!==''&&wt!=null?' @ '+wt+' lb':'')}
-function amountText(p){var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?p.shelves:'');if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?p.shelves2:'');return a}
+function amountText(p){if(p.setsonly)return '';var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?p.shelves:'');if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?p.shelves2:'');return a}
 function cellText(e,k){
   var n=checked(k,e.id);if(!n)return '';
   var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay(),k);
