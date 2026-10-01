@@ -387,6 +387,14 @@ var PH = load(PKEY) || {};
 (function(){ if(S.mig30)return;
   S.ex.forEach(function(e){if(/^tib bar$/i.test(e.name))e.plan.weighted=1});
   S.mig30=1; save(KEY,S); })();
+(function(){ if(S.mig31)return;
+  S.ex.forEach(function(e){if(/^hexagon drill$/i.test(e.name)){
+    var p=e.plan;p.ps=1;p.psn=2;p.ptime=1;p.sets=2;p.weighted=0;p.timed=0;p.tunit='';p.reps='';p.reps2='';
+    var fix=function(o){if(!o)return;if(o.sets!=null)o.sets=2;if(o.reps!=null)o.reps=''};
+    Object.keys(e.ov||{}).forEach(function(k){fix(e.ov[k])});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){fix(e.wk[m][k])})});
+  }});
+  S.mig31=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -437,10 +445,10 @@ function bandField(cur){
   return '<div class="field"><label for="f-band">Band</label><select id="f-band" data-a="pf" data-v="band">'+o+'</select></div>';
 }
 function wtSuffix(p,w){return p.hammer?' \u00b7 '+w+' hammer':' @ '+w+' lb'}
-function total(p){return p.ps?3:(+p.sets||0)+(p.two?(+p.sets2||0):0)}
-function psItems(p,compact){var o=[],k,r,w;for(k=1;k<=3;k++){r=k===1?p.reps:p['reps'+k];w=k===1?p.weight:p['weight'+k];o.push((r||'\u2013')+(w!==''&&w!=null?(compact?'@'+w:' @ '+w):''))}return o}
+function total(p){return p.ps?(p.psn||3):(+p.sets||0)+(p.two?(+p.sets2||0):0)}
+function psItems(p,compact){var o=[],k,r,w,n=p.psn||3;for(k=1;k<=n;k++){r=k===1?p.reps:p['reps'+k];w=k===1?p.weight:p['weight'+k];o.push((r||'\u2013')+(p.weighted&&w!==''&&w!=null?(compact?'@'+w:' @ '+w):''))}return o}
 function summary(p){
-  if(p.ps){var any=[p.weight,p.weight2,p.weight3].some(function(w){return w!==''&&w!=null});return psItems(p).join(' \u00b7 ')+(any?' lb':'')}
+  if(p.ps){var any=p.weighted&&[p.weight,p.weight2,p.weight3].some(function(w){return w!==''&&w!=null});return psItems(p).join(' \u00b7 ')+(any?' lb':'')}
   if(p.setsonly)return p.sets+(+p.sets===1?' set':' sets');
   var s=p.sets+' × '+repsTxt(p,p.reps)+shTxt(p,p.shelves);
   if(p.weighted&&p.weight!==''&&p.weight!=null)s+=wtSuffix(p,p.weight);
@@ -536,7 +544,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 60.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 61.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -589,11 +597,13 @@ function sheetHtml(){
       return '<button data-a="target" data-v="'+k+'" class="'+(dotOf(k)?'ov':'')+(tgt===String(k)?' sel':'')+'" aria-pressed="'+isOn(k)+'">'+DAYN[k]+'</button>';
     }).join('')+'</div>';
   if(e.plan.ps){
-    [1,2,3].forEach(function(k){
+    var pn=e.plan.psn||3,ki;
+    for(ki=1;ki<=pn;ki++){(function(k){
       var rf=k===1?'reps':'reps'+k,wf=k===1?'weight':'weight'+k,wid=k===1?'f-w':'f-w'+k;
-      h+='<div class="grid3" style="margin-top:'+(k===1?0:8)+'px"><div style="align-self:end;font-weight:700;padding-bottom:14px">Set '+k+'</div>'+repsField(base[rf],false,rf,false,e.plan.rl)+
-        '<div class="field"><label for="'+wid+'">Weight</label><select id="'+wid+'" data-a="pf" data-v="'+wf+'">'+wtOpts(base[wf],wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e))+'</select></div></div>';
-    });
+      h+='<div class="grid3" style="margin-top:'+(k===1?0:8)+'px"><div style="align-self:end;font-weight:700;padding-bottom:14px">Set '+k+'</div>'+
+        (e.plan.ptime?timeField(base[rf],e.plan.tunit,e.plan.tr,rf):repsField(base[rf],false,rf,false,e.plan.rl))+
+        (e.plan.weighted?'<div class="field"><label for="'+wid+'">Weight</label><select id="'+wid+'" data-a="pf" data-v="'+wf+'">'+wtOpts(base[wf],wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e))+'</select></div>':'<div></div>')+'</div>';
+    })(ki)}
   } else {
   h+='<div class="grid3'+(e.plan.shelf||(e.plan.hasband&&e.plan.weighted)?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves,'shelves',e.plan):'')+
@@ -642,7 +652,8 @@ function repsField(cur,two,f,trips,custom){
   o+=list.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('');
   return '<div class="field"><label for="f-'+f+'">'+(trips?'Trips':'Reps')+'</label><select id="f-'+f+'" data-a="pf" data-v="'+f+'">'+o+'</select></div>';
 }
-function timeField(cur,unit,tr){
+function timeField(cur,unit,tr,f){
+  f=f||'reps';
   function secLabel(n){var m=Math.floor(n/60),r=n%60;return m?(m+' min'+(r?' '+r+' sec':'')):r+' sec'}
   var o='',secs=[],mins=[],n,all;
   if(tr)for(n=tr[0];n<=tr[1];n+=tr[2])secs.push(secLabel(n));
@@ -653,7 +664,7 @@ function timeField(cur,unit,tr){
   else if(!cur)o+='<option value="" selected>Not set</option>';
   function grp(t,l){return '<optgroup label="'+t+'">'+l.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('')+'</optgroup>'}
   o+=unit==='sec'?secs.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join(''):unit==='min'?mins.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join(''):grp('Seconds (up to 3 min)',secs)+grp('Minutes',mins);
-  return '<div class="field"><label for="f-reps">Time</label><select id="f-reps" data-a="pf" data-v="reps">'+o+'</select></div>';
+  return '<div class="field"><label for="f-'+f+'">Time</label><select id="f-'+f+'" data-a="pf" data-v="'+f+'">'+o+'</select></div>';
 }
 function lastTime(e){
   var keys=Object.keys(S.log).filter(function(k){return k<U.date&&S.log[k][e.id]&&S.log[k][e.id].snap&&S.log[k][e.id].sets.some(Boolean)}).sort();
@@ -729,7 +740,7 @@ var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 function landDate(k){var m=weekOf(fromKey(k))[0];if(m!==weekOf(new Date())[0])return m;var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)}
 function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(d)}
 function amountOne(sets,reps,wt,weighted,sh,hm,tr){return (sets>1&&/^\d/.test(reps||'')?sets+'X':'')+(reps||'')+(tr&&reps?(reps==='1'?' trip':' trips'):'')+(sh||'')+(weighted&&wt!==''&&wt!=null?wtSuffix({hammer:hm},wt):'')}
-function amountText(p){if(p.ps)return psItems(p,true).join(' ');if(p.setsonly)return p.sets+(+p.sets===1?' set':' sets');var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?shTxt(p,p.shelves):'',p.hammer,p.trips);if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?shTxt(p,p.shelves2):'',p.hammer,p.trips);return a+bandTxt(p)}
+function amountText(p){if(p.ps)return psItems(p,true).join(p.ptime?' / ':' ');if(p.setsonly)return p.sets+(+p.sets===1?' set':' sets');var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?shTxt(p,p.shelves):'',p.hammer,p.trips);if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?shTxt(p,p.shelves2):'',p.hammer,p.trips);return a+bandTxt(p)}
 function cellText(e,k){
   var n=checked(k,e.id);if(!n)return '';
   var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay(),k);
@@ -938,7 +949,7 @@ app.addEventListener('click',function(ev){
     S.log[U.date]=S.log[U.date]||{};
     var en=S.log[U.date][e.id]=S.log[U.date][e.id]||{sets:[false,false,false,false,false,false,false,false]};
     en.sets[+v]=!en.sets[+v];
-    en.snap={sets:p.sets,reps:p.reps,weight:p.weight,weighted:p.weighted,two:p.two,sets2:p.sets2,reps2:p.reps2,weight2:p.weight2,shelf:p.shelf,shelves:p.shelves,shelves2:p.shelves2,hammer:p.hammer,trips:p.trips,hasband:p.hasband,band:p.band,shlabel:p.shlabel,shmax:p.shmax,ps:p.ps,reps3:p.reps3,weight3:p.weight3};
+    en.snap={sets:p.sets,reps:p.reps,weight:p.weight,weighted:p.weighted,two:p.two,sets2:p.sets2,reps2:p.reps2,weight2:p.weight2,shelf:p.shelf,shelves:p.shelves,shelves2:p.shelves2,hammer:p.hammer,trips:p.trips,hasband:p.hasband,band:p.band,shlabel:p.shlabel,shmax:p.shmax,ps:p.ps,reps3:p.reps3,weight3:p.weight3,psn:p.psn,ptime:p.ptime};
     persist();render();
   }
   else if(a==='target'){keepSheet();U.target=v;render()}
