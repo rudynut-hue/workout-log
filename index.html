@@ -470,7 +470,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 51.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 52.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -478,10 +478,10 @@ function viewSetup(){
   else h+='<div class="tools"><button class="btn" data-a="clearask" data-v="log">Clear my workout history</button><button class="btn" data-a="clearask" data-v="all">Reset everything</button></div>';
   return h;
 }
-function wtMin(e){return /^sled push/i.test(e.name)?100:/^box lift and carry$/i.test(e.name)?20:/^planks$/i.test(e.name)?10:/^med-x (core isolator|lumbar machine)$/i.test(e.name)?100:/^concrete bag transfer$/i.test(e.name)?35:5}
+function wtMin(e){return /^sled push/i.test(e.name)?100:/^box lift and carry$/i.test(e.name)?20:/^planks$/i.test(e.name)?10:/^med-x core isolator$/i.test(e.name)?15:/^med-x lumbar machine$/i.test(e.name)?100:/^concrete bag transfer$/i.test(e.name)?35:5}
 function wtExtra(e){return /^(dumbbell incline bench|champagne press)$/i.test(e.name)?[6,7,8,12]:[]}
-function wtStep(e){return /^med-x (core isolator|lumbar machine)$/i.test(e.name)?10:5}
-function wtMax(e){return /^planks$/i.test(e.name)?100:/^med-x (core isolator|lumbar machine)$/i.test(e.name)?350:/^concrete bag transfer$/i.test(e.name)?50:300}
+function wtStep(e){return /^med-x lumbar machine$/i.test(e.name)?10:5}
+function wtMax(e){return /^planks$/i.test(e.name)?100:/^med-x core isolator$/i.test(e.name)?100:/^med-x lumbar machine$/i.test(e.name)?350:/^concrete bag transfer$/i.test(e.name)?50:300}
 function wtOpts(cur,min,extra,step,max){
   step=step||5;max=max||300;
   var o='<option value="">Not set</option>',c=String(cur==null?'':cur),w,list=[];
