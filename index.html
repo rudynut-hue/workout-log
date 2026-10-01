@@ -380,13 +380,21 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 32.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 33.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
   else if(U.confirm==='all')h+='<div class="empty"><b>Reset everything?</b> This erases your history, photos, and any changes to groups, plans and added exercises, and puts the original list back. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearall">Yes, reset everything</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
   else h+='<div class="tools"><button class="btn" data-a="clearask" data-v="log">Clear my workout history</button><button class="btn" data-a="clearask" data-v="all">Reset everything</button></div>';
   return h;
+}
+function wtMin(e){return /^sled push/i.test(e.name)?100:/^box lift and carry$/i.test(e.name)?20:5}
+function wtOpts(cur,min){
+  var o='<option value="">Not set</option>',c=String(cur==null?'':cur),found=false,w;
+  for(w=min;w<=300;w+=5){if(String(w)===c)found=true}
+  if(c!==''&&!found)o+='<option value="'+esc(c)+'" selected>'+esc(c)+' lb</option>';
+  for(w=min;w<=300;w+=5)o+='<option value="'+w+'"'+(c===String(w)?' selected':'')+'>'+w+' lb</option>';
+  return o;
 }
 function sheetHtml(){
   var e=byId(U.open);if(!e)return '';
@@ -421,16 +429,14 @@ function sheetHtml(){
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves,'shelves'):'')+
     (e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two));
   if(e.plan.weighted){
-    var opts='<option value="">Not set</option>';
-    for(var w=5;w<=300;w+=5)opts+='<option value="'+w+'"'+(String(base.weight)===String(w)?' selected':'')+'>'+w+' lb</option>';
+    var opts=wtOpts(base.weight,wtMin(e));
     h+='<div class="field"><label for="f-w">Weight</label><select id="f-w" data-a="pf" data-v="weight">'+opts+'</select></div>';
   } else h+='<div></div>';
   h+='</div>';
   if(e.plan.two){
     h+='<div class="hint" style="margin:10px 0 4px">Second row (leave sets at 0 if you don\u2019t need it)</div><div class="grid3'+(e.plan.shelf?' grid4':'')+'"><div class="field"><label for="f-sets2">Sets</label><select id="f-sets2" data-a="pf" data-v="sets2">'+
       [0,1,2,3,4].map(function(k){return '<option'+((+base.sets2||0)===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves2,'shelves2'):'')+repsField(base.reps2,true,'reps2');
-    var opts2='<option value="">Not set</option>';
-    for(var w2=5;w2<=300;w2+=5)opts2+='<option value="'+w2+'"'+(String(base.weight2)===String(w2)?' selected':'')+'>'+w2+' lb</option>';
+    var opts2=wtOpts(base.weight2,wtMin(e));
     h+='<div class="field"><label for="f-w2">Weight</label><select id="f-w2" data-a="pf" data-v="weight2">'+opts2+'</select></div></div>';
   }
   if(inWk)h+=tgt==='all'?'<div class="hint">Only changes the week of '+md(wkm)+'. Other weeks keep their plan.'+(wv.all?' <button class="link" data-a="resetday">Use the regular plan for this week</button>':'')+'</div>'
