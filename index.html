@@ -458,6 +458,17 @@ var PH = load(PKEY) || {};
     Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
   }});
   S.mig36=1; save(KEY,S); })();
+(function(){ if(S.mig37)return;
+  var ok=function(v){var m=/^(?:(\d+) min)?(?: ?(\d+) sec)?$/.exec(v||'');if(!m||!v)return false;var t=(+m[1]||0)*60+(+m[2]||0);return t>=10&&t<=60&&t%5===0};
+  S.ex.forEach(function(e){if(/^stair climbing intervals$/i.test(e.name)){
+    e.plan.timed=1;e.plan.tunit='sec';e.plan.tr=[10,60,5];
+    e.plan.shelf=1;e.plan.shlabel='Stairs';e.plan.shmin=3;e.plan.shmax=15;e.plan.shlast=1;
+    if(!ok(e.plan.reps))e.plan.reps='';
+    if(e.plan.shelves&&(+e.plan.shelves<3||+e.plan.shelves>15))e.plan.shelves='';
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].reps!=null&&!ok(e.ov[k].reps))e.ov[k].reps=''});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
+  }});
+  S.mig37=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -642,7 +653,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 87.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 88.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -715,9 +726,9 @@ function sheetHtml(){
         (e.plan.weighted?'<div class="field"><label for="'+wid+'">Weight</label><select id="'+wid+'" data-a="pf" data-v="'+wf+'">'+wtOpts(base[wf],wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e))+'</select></div>':'<div></div>')+'</div>';
     })(ki)}
   } else {
-  h+='<div class="grid3'+(e.plan.shelf||(e.plan.hasband&&e.plan.weighted)?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
-    [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves,'shelves',e.plan):'')+
-    (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit,e.plan.tr):repsField(base.reps,e.plan.two,'reps',e.plan.trips,e.plan.rl))+(e.plan.hasband?bandField(base.band):'')+(e.plan.ladderx?ladderFields(base):'');
+  h+='<div class="grid3'+((e.plan.shelf&&!e.plan.shlast)||(e.plan.hasband&&e.plan.weighted)?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
+    [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf&&!e.plan.shlast?shelvesField(base.shelves,'shelves',e.plan):'')+
+    (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit,e.plan.tr):repsField(base.reps,e.plan.two,'reps',e.plan.trips,e.plan.rl))+(e.plan.shelf&&e.plan.shlast?shelvesField(base.shelves,'shelves',e.plan):'')+(e.plan.hasband?bandField(base.band):'')+(e.plan.ladderx?ladderFields(base):'');
   if(e.plan.weighted){
     if(e.plan.hammer){
       var hw=base.weight||'Medium',ho=['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(hw===x?' selected':'')+'>'+x+'</option>'}).join('');
@@ -726,7 +737,7 @@ function sheetHtml(){
     var opts=wtOpts(base.weight,wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e));
     h+='<div class="field"><label for="f-w">Weight</label><select id="f-w" data-a="pf" data-v="weight">'+opts+'</select></div>';
     }
-  } else h+=(e.plan.hasband||e.plan.ladderx)?'':'<div></div>';
+  } else h+=(e.plan.hasband||e.plan.ladderx||e.plan.shlast)?'':'<div></div>';
   h+='</div>';
   }
   if(e.plan.two){
@@ -747,9 +758,9 @@ function sheetHtml(){
   }
   return h;
 }
-function shTxt(p,n){return p.shelf&&n?' ('+n+(p.shlabel==='Pallets'?(String(n)==='1'?' pallet':' pallets'):' sh')+')':''}
+function shTxt(p,n){return p.shelf&&n?' ('+n+(p.shlabel==='Pallets'?(String(n)==='1'?' pallet':' pallets'):p.shlabel==='Stairs'?(String(n)==='1'?' stair':' stairs'):' sh')+')':''}
 function shelvesField(cur,f,pl){
-  var lab=(pl&&pl.shlabel)||'Shelves',mx=(pl&&pl.shmax)||3,L=[],k;for(k=1;k<=mx;k++)L.push(String(k));
+  var lab=(pl&&pl.shlabel)||'Shelves',mx=(pl&&pl.shmax)||3,mn=(pl&&pl.shmin)||1,L=[],k;for(k=mn;k<=mx;k++)L.push(String(k));
   var o=(cur?'':'<option value="" selected>Not set</option>')+L.map(function(x){return '<option value="'+x+'"'+(x===String(cur)?' selected':'')+'>'+x+'</option>'}).join('');
   return '<div class="field"><label for="f-'+f+'">'+lab+'</label><select id="f-'+f+'" data-a="pf" data-v="'+f+'">'+o+'</select></div>';
 }
