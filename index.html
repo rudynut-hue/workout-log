@@ -362,6 +362,15 @@ var PH = load(PKEY) || {};
     Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
   }});
   S.mig27=1; save(KEY,S); })();
+(function(){ if(S.mig28)return;
+  var std=['3-5','5-8','8-10','10-12'],ok=function(v){return std.indexOf(String(v))>=0};
+  S.ex.forEach(function(e){if(e.plan.hasband&&!/^(lateral|retro) band walks$/i.test(e.name)){
+    e.plan.trips=0;delete e.plan.rl;
+    if(!ok(e.plan.reps))e.plan.reps='8-10';
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].reps!=null&&!ok(e.ov[k].reps))e.ov[k].reps='8-10'});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps='8-10'})});
+  }});
+  S.mig28=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -509,7 +518,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 57.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 58.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
