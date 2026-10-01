@@ -621,7 +621,7 @@ function viewSetup(){
   h+='<div class="tools"><input type="search" id="q" placeholder="Search exercises" value="'+esc(U.q)+'" aria-label="Search exercises">'+
     '<select class="sel" id="flt" aria-label="Sort by schedule">'+
     [['all','All'],['daily','Every day'],['mwf','Mon \u00b7 Wed \u00b7 Fri'],['tt','Tue \u00b7 Thu'],['twice','2\u00d7 a week'],['once','Once a week'],['off','Not scheduled']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
-  var xr=function(e){return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+'<select class="sel" data-a="freq" data-v="'+e.id+'"'+(S.admin?'':' disabled')+' aria-label="Schedule for '+esc(e.name)+'">'+Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>'};
+  var xr=function(e){return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+'</div>'};
   var top=f==='all'?list:list.filter(function(e){return e.freq===f}),rest=f==='all'?[]:list.filter(function(e){return e.freq!==f});
   h+='<div class="list">'+(list.length?top.map(xr).join('')+(f==='all'?'':(top.length?'':'<div class="empty">None right now.</div>')+(rest.length?'<div class="xdiv">All other exercises</div>'+rest.map(xr).join(''):'')):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
@@ -633,7 +633,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 84.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 85.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
