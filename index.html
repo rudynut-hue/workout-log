@@ -388,7 +388,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 35.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 36.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -647,8 +647,9 @@ function viewWeek(){
   var h='<div class="top noprint"><h1>Weekly sheet</h1><button class="btn" data-a="tab" data-v="progress">Back</button></div>';
   h+='<div class="wknav noprint"><button class="btn" data-a="wkprev" aria-label="Previous week">‹</button><b>'+md(m.dates[0])+' – '+md(m.dates[4])+'</b><button class="btn" data-a="wknext" aria-label="Next week">›</button></div>';
   h+='<div class="field noprint"><label for="wkname">Name on the sheet</label><input id="wkname" data-a="wkname" value="'+esc(S.name||'')+'" autocomplete="name"></div>';
+  h+='<div class="field noprint"><label for="wkphone">Phone number to text (for someone not in your contacts)</label><input id="wkphone" data-a="wkphone" type="tel" inputmode="tel" placeholder="e.g. 555 123 4567" value="'+esc(S.phone||'')+'" autocomplete="off"></div>';
   var txt=summaryText(m);
-  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send pictures of sheets</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wksave">Save pictures</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
+  h+='<div class="wkbtn noprint"><button class="btn pri" data-a="wkpic">Send pictures of sheets</button><button class="btn" data-a="wksend">Send as text</button><button class="btn" data-a="wkcopy">Copy text</button><button class="btn" data-a="wkmail">Email text</button><button class="btn" data-a="wksms">Text message</button><button class="btn" data-a="wkpicnum">Text pictures to number</button><button class="btn" data-a="wksave">Save pictures</button><button class="btn" data-a="wkprint">Print sheet</button></div>';
   h+='<div id="wkmsg" class="hint noprint" role="status">'+(m.any?'Send pictures opens your phone\u2019s share sheet so you can pick Messages or Mail. You get one picture for each of your sheets.':'Nothing is logged for this week yet. Use the arrows to pick another week.')+'</div>';
   h+='<div class="field noprint"><label for="wktext">What will be sent</label><textarea id="wktext" readonly rows="12">'+esc(txt)+'</textarea></div>';
   h+='<div class="hint noprint" style="margin-top:14px">The sheets, as they will be pictured and printed:</div>';
@@ -656,19 +657,37 @@ function viewWeek(){
   return h;
 }
 function wkSay(t){var e=document.getElementById('wkmsg');if(e)e.textContent=t}
+function phoneDigits(){var v=(document.getElementById('wkphone')||{}).value;if(v==null)v=S.phone||'';var d=String(v).replace(/[^\d+]/g,'');return d}
 function wkAction(a){
   var m=weekModel(U.wk),txt=summaryText(m),subj='Workout Log, week of '+md(m.dates[0]);
   if(a==='wkprev'){U.wk=shiftWeek(U.wk,-1);return render()}
   if(a==='wknext'){U.wk=shiftWeek(U.wk,1);return render()}
   if(a==='wkprint')return window.print();
   if(a==='wkmail'){location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(txt);return}
-  if(a==='wksms'){location.href='sms:?&body='+encodeURIComponent(txt);return}
+  if(a==='wksms'){location.href='sms:'+phoneDigits()+'?&body='+encodeURIComponent(txt);return}
   var copy=function(){
     var ta=document.getElementById('wktext');
     try{navigator.clipboard.writeText(txt).then(function(){wkSay('Copied. Paste it into a text or email.')},function(){ta.select();wkSay('Text selected. Use Copy on your phone\u2019s menu.')})}
     catch(x){ta.select();wkSay('Text selected. Use Copy on your phone\u2019s menu.')}
   };
   if(a==='wkcopy')return copy();
+  if(a==='wkpicnum'){
+    var num=phoneDigits();
+    if(num.replace(/\D/g,'').length<7){wkSay('Type the phone number in the box above first.');var pe=document.getElementById('wkphone');if(pe)pe.focus();return}
+    S.phone=(document.getElementById('wkphone')||{}).value||S.phone;persist();
+    wkSay('Making the pictures...');
+    sheetImage(weekModel(U.wk),function(bl){
+      if(!bl.length){wkSay('Nothing to draw for this week yet.');return}
+      var mm=weekModel(U.wk);
+      bl.forEach(function(b,i){setTimeout(function(){
+        var url=URL.createObjectURL(b),an=document.createElement('a');an.href=url;an.download='Workout-Week-'+mm.dates[0]+'-Sheet'+mm.pageNums[i]+'.png';document.body.appendChild(an);an.click();an.remove();
+        setTimeout(function(){URL.revokeObjectURL(url)},4000);
+      },i*400)});
+      wkSay(bl.length+' picture'+(bl.length===1?' was':'s were')+' saved to your phone. Messages is opening to that number. Tap the attach button and pick the saved pictures.');
+      setTimeout(function(){location.href='sms:'+num},bl.length*400+900);
+    });
+    return;
+  }
   if(a==='wkpic'||a==='wksave'){
     var m2=weekModel(U.wk);
     wkSay('Making the pictures...');
@@ -722,7 +741,7 @@ app.addEventListener('click',function(ev){
   else if(a==='openp'){U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U.scope='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
   else if(a==='openwk'){U.tab='week';U.wk=weekOf(new Date())[0];render();window.scrollTo(0,0)}
-  else if(a.indexOf('wk')===0&&a!=='wkname'){wkAction(a)}
+  else if(a.indexOf('wk')===0&&a!=='wkname'&&a!=='wkphone'){wkAction(a)}
   else if(a==='sd'||a==='sm'){
     var pr=v.split('|'),ex=byId(pr[0]);
     if(a==='sd'){var d=+pr[1],cur=fixedDays(ex).slice(),ix=cur.indexOf(d);if(ix>=0)cur.splice(ix,1);else cur.push(d);setDays(ex,cur)}
@@ -784,6 +803,7 @@ app.addEventListener('click',function(ev){
 app.addEventListener('change',function(ev){
   var t=ev.target,a=t.getAttribute('data-a');
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
+  if(t.id==='wkphone'){S.phone=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
   if(a==='freq'){var fe=byId(t.getAttribute('data-v'));fe.freq=t.value;fe.days=(LEGACY[t.value]||[]).slice();persist();keepSheet();return render()}
   if(a==='ut'){byId(U.open).plan.timed=t.checked?1:0;persist();keepSheet();return render()}
