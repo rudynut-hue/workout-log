@@ -380,7 +380,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 33.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 34.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -443,7 +443,6 @@ function sheetHtml(){
     :'<div class="hint">Only changes '+DAYN[+tgt]+' of the week of '+md(wkm)+'.'+(wv[tgt]?' <button class="link" data-a="resetday">Undo this day</button>':'')+'</div>';
   else h+=tgt==='all'?'<div class="hint">Applies to every week, on every day unless a day has its own plan (marked with a yellow dot).</div>'
     :'<div class="hint">Changes '+DAYN[+tgt]+' in every week. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
-  h+='<label class="chk"><input type="checkbox" id="f-uw" data-a="uw"'+(e.plan.weighted?' checked':'')+'> This exercise uses weight</label>';
   h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   h+='</div></div></div>';
