@@ -68,6 +68,9 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .row.done .badge{background:var(--ok);color:var(--surface);border-color:transparent}
 .row.dim{opacity:.6}
 .chip{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:1px}
+.row.skipped{background:transparent;border-style:dashed;opacity:.6}
+.lt{margin-right:auto;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px;min-height:36px;font-weight:600;font-size:.85rem}
+.lt[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .rowwrap{display:flex;flex-direction:column;gap:4px;position:relative}
 .rmbtn{position:absolute;bottom:8px;left:56%;background:none;border:0;color:var(--muted);text-decoration:underline;font-weight:600;min-height:32px;padding:0 6px;font-size:.85rem}
 .rmask{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
@@ -577,28 +580,35 @@ function viewToday(){
   }).join('')+'</div>';
   var sched=S.ex.filter(function(e){return scheduled(e,dow,U.date)});
   var flex=S.ex.filter(function(e){return isFlex(e)&&!pickedOn(e,U.date)});
-  var doneN=sched.filter(function(e){return isDone(e,U.date)}).length;
-  h+='<div class="sec"><h2>Scheduled</h2><small>'+doneN+' of '+sched.length+' done</small></div>';
+  var skN=sched.filter(function(e){return isSkipped(e,U.date)}).length,doneN=sched.filter(function(e){return !isSkipped(e,U.date)&&isDone(e,U.date)}).length;
+  h+='<div class="sec"><h2>Scheduled</h2>'+(sched.length||flex.length?'<button class="lt" data-a="leftsort" aria-pressed="'+!!U.leftSort+'">Left to do</button>':'')+'<small>'+doneN+' of '+(sched.length-skN)+' done'+(skN?' \u00b7 '+skN+' skipped':'')+'</small></div>';
   if(!sched.length)h+='<div class="empty"><b>Nothing scheduled for '+DAYN[dow]+'.</b> Set which days each exercise belongs to on the Exercises tab.</div>';
-  else h+='<div class="list">'+sched.map(function(e){return rowHtml(e,dow)}).join('')+'</div>';
+  else h+='<div class="list">'+leftOrder(sched).map(function(e){return wrapRow(e,dow)}).join('')+'</div>';
   if(flex.length){
     h+='<div class="sec"><h2>Pick your days</h2><small>counts reset every Monday</small></div><div class="list">'+
-      flex.map(function(e){
-        var rm=!S.admin?'':U.rmId===e.id?'<div class="rmask" role="alertdialog" aria-label="Remove '+esc(e.name)+'"><b>Are you sure you want to remove '+esc(e.name)+'?</b> It stays off your list until you add it back on the Exercises tab (choose Not scheduled, then set its schedule). Your history is kept.<div class="tools"><button class="btn pri" data-a="rmgo" data-v="'+e.id+'">Yes, remove</button><button class="btn" data-a="rmno">Cancel</button></div></div>'
-          :'<button class="rmbtn" data-a="rmask" data-v="'+e.id+'" aria-label="Remove '+esc(e.name)+'">Remove</button>';
-        return '<div class="rowwrap">'+rowHtml(e,dow,wk)+rm+'</div>'}).join('')+'</div>';
+      leftOrder(flex).map(function(e){return wrapRow(e,dow,wk)}).join('')+'</div>';
   }
   return h;
 }
+function isSkipped(e,dk){return !!(S.skip&&S.skip[dk]&&S.skip[dk][e.id])}
+function wrapRow(e,dow,wk){
+  var sk=isSkipped(e,U.date),btn=sk?'<button class="rmbtn" data-a="unskip" data-v="'+e.id+'" aria-label="Undo skip for '+esc(e.name)+'">Undo skip</button>':checked(U.date,e.id)===0?'<button class="rmbtn" data-a="skip" data-v="'+e.id+'" aria-label="Skip '+esc(e.name)+' today">Skip</button>':'';
+  return '<div class="rowwrap">'+rowHtml(e,dow,wk)+btn+'</div>';
+}
+function leftOrder(list){
+  if(!U.leftSort)return list;
+  var key=function(e){var p=planFor(e,fromKey(U.date).getDay(),U.date),n=checked(U.date,e.id);return isSkipped(e,U.date)?3000:n>=total(p)?2000+n:n};
+  return list.map(function(e,i){return [e,i]}).sort(function(a,b){return key(a[0])-key(b[0])||a[1]-b[1]}).map(function(x){return x[0]});
+}
 function rowHtml(e,dow,wk){
-  var p=planFor(e,dow,U.date),n=checked(U.date,e.id),done=n>=total(p);
+  var p=planFor(e,dow,U.date),n=checked(U.date,e.id),done=n>=total(p),sk=isSkipped(e,U.date);
   var extra='',dim='';
   if(wk){
     var target=e.freq==='twice'?2:1,c=weekCount(e,wk);
     extra='<span class="chip">'+c+'/'+target+(wk[0]===weekOf(new Date())[0]?' this week':' that week')+'</span>';
     if(c>=target&&!done)dim=' dim';
   }
-  return '<button class="row'+(done?' done':'')+dim+'" data-a="open" data-v="'+e.id+'"><div class="txt"><div class="nm">'+esc(e.name)+extra+'</div><div class="pl">'+esc(summary(p))+'</div></div><div class="badge">'+(done?'✓':n+'/'+total(p))+'</div></button>';
+  return '<button class="row'+(done?' done':'')+dim+(sk?' skipped':'')+'" data-a="open" data-v="'+e.id+'"><div class="txt"><div class="nm">'+esc(e.name)+extra+'</div><div class="pl">'+(sk?'Skipped today':esc(summary(p)))+'</div></div><div class="badge">'+(sk?'\u2013':done?'✓':n+'/'+total(p))+'</div></button>';
 }
 function viewSetup(){
   var f=U.filter,q=U.q.toLowerCase();
@@ -624,7 +634,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 81.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 82.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -1052,6 +1062,7 @@ app.addEventListener('click',function(ev){
     S.log[U.date]=S.log[U.date]||{};
     var en=S.log[U.date][e.id]=S.log[U.date][e.id]||{sets:[false,false,false,false,false,false,false,false]};
     en.sets[+v]=!en.sets[+v];
+    if(S.skip&&S.skip[U.date]){delete S.skip[U.date][e.id];if(!Object.keys(S.skip[U.date]).length)delete S.skip[U.date]}
     en.snap={sets:p.sets,reps:p.reps,weight:p.weight,weighted:p.weighted,two:p.two,sets2:p.sets2,reps2:p.reps2,weight2:p.weight2,shelf:p.shelf,shelves:p.shelves,shelves2:p.shelves2,hammer:p.hammer,trips:p.trips,hasband:p.hasband,band:p.band,ladderx:p.ladderx,ladder:p.ladder,jacket:p.jacket,shlabel:p.shlabel,shmax:p.shmax,ps:p.ps,reps3:p.reps3,weight3:p.weight3,psn:p.psn,ptime:p.ptime};
     if(e.plan.ps&&e.plan.weighted){var bw=bestWeight(e),cw0=Math.max(parseFloat(e.plan.weight)||0,parseFloat(e.plan.weight2)||0,parseFloat(e.plan.weight3)||0);if(bw>cw0){e.plan.weight=e.plan.weight2=e.plan.weight3=String(bw)}}
     persist();render();
@@ -1079,6 +1090,9 @@ app.addEventListener('click',function(ev){
   else if(a==='gobackup'){U.tab='setup';U.showBackup=true;render();window.scrollTo(0,document.body.scrollHeight)}
   else if(a==='clearask'){U.confirm=v;U.note='';render()}
   else if(a==='clearno'){U.confirm=null;render()}
+  else if(a==='skip'){var se=byId(v);if(se&&checked(U.date,v)===0){S.skip=S.skip||{};S.skip[U.date]=S.skip[U.date]||{};S.skip[U.date][v]=1;persist();render()}}
+  else if(a==='unskip'){if(S.skip&&S.skip[U.date]){delete S.skip[U.date][v];if(!Object.keys(S.skip[U.date]).length)delete S.skip[U.date]}persist();render()}
+  else if(a==='leftsort'){U.leftSort=!U.leftSort;render()}
   else if(a==='rmask'){U.rmId=v;render()}
   else if(a==='rmno'){U.rmId=null;render()}
   else if(a==='rmgo'){var re=byId(v);re.freq='off';re.days=[];U.rmId=null;persist();render()}
