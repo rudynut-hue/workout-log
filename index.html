@@ -152,6 +152,11 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 button.pslot.has{padding:0;border:1px solid var(--line);cursor:pointer;background:#fff}
 .lb{z-index:20;align-items:center}
 .mveil{z-index:30;align-items:center;padding:20px}
+.mveil .dsheet{border-radius:16px;max-width:480px;max-height:92%}
+.eph{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;margin-bottom:6px}
+.eph h3{margin:0}
+.dd{min-height:38px;padding:6px 12px;font-size:.85rem}
+.mbox .tg{margin-bottom:14px}
 .mbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:340px;width:100%;text-align:center}
 .mbox p{margin:0 0 16px;font-size:1.05rem;font-weight:600}
 .lbbox{background:var(--surface);border-radius:14px;padding:14px;width:100%;max-width:440px;max-height:94%;overflow:auto;display:flex;flex-direction:column;gap:10px}
@@ -515,7 +520,7 @@ function lockedDays(e,wk,nohint){
   var fd=fixedDays(e),fx=isFlex(e),h='<div class="tg" role="group" aria-label="Days">';
   [1,2,3,4,5].forEach(function(k){
     var on=fx?pickedOn(e,wk[k-1]):fd.indexOf(k)>=0;
-    h+='<button '+(fx?'data-a="pickday" data-v="'+e.id+'|'+k+'"':S.admin?'data-a="sd" data-v="'+e.id+'|'+k+'"':'disabled')+' aria-pressed="'+on+'">'+DAYN[k]+'</button>';
+    h+='<button '+(fx?'data-a="pickday" data-v="'+e.id+'|'+k+'"':S.admin?'data-a="sd" data-v="'+e.id+'|'+k+'"':'disabled')+(S.admin&&e.ov&&e.ov[k]&&Object.keys(e.ov[k]).length?' class="ov"':'')+' aria-pressed="'+on+'">'+DAYN[k]+'</button>';
   });
   return h+'</div>'+(fx&&!nohint?'<div class="hint">Tap the day you are doing this.</div>':'');
 }
@@ -584,7 +589,8 @@ var todayKey=dkey(new Date());
 
 function render(){
   var keepScroll=window.scrollY;
-  app.innerHTML=(U.tab==='today'?viewToday():U.tab==='progress'?viewProgress():U.tab==='week'?viewWeek():viewSetup())+navHtml()+(U.open?sheetHtml():'')+(U.big?lightboxHtml():'')+(U.msg?'<div class="veil mveil" data-a="msgok" role="alertdialog" aria-modal="true" aria-label="Notice"><div class="mbox"><p>'+esc(U.msg)+'</p><button class="btn pri" data-a="msgok">OK</button></div></div>':'');
+  if(!U.open){U.dayEdit=null;U.dayPick=false}
+  app.innerHTML=(U.tab==='today'?viewToday():U.tab==='progress'?viewProgress():U.tab==='week'?viewWeek():viewSetup())+navHtml()+(U.open?sheetHtml():'')+(U.big?lightboxHtml():'')+((U.dayPick||U.dayEdit)&&U.open?dayDlgHtml():'')+(U.msg?'<div class="veil mveil" data-a="msgok" role="alertdialog" aria-modal="true" aria-label="Notice"><div class="mbox"><p>'+esc(U.msg)+'</p><button class="btn pri" data-a="msgok">OK</button></div></div>':'');
   window.scrollTo(0,keepScroll);
   var sh=document.getElementById('sheet');if(sh&&U._sheetScroll)sh.scrollTop=U._sheetScroll;
 }
@@ -662,7 +668,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 89.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 90.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -694,38 +700,8 @@ function wtOpts(cur,min,extra,step,max,only){
   list.forEach(function(x){o+='<option value="'+x+'"'+(c===String(x)?' selected':'')+'>'+x+' lb</option>'});
   return o;
 }
-function sheetHtml(){
-  var e=byId(U.open);if(!e)return '';
-  var d=fromKey(U.date),dow=d.getDay(),p=planFor(e,dow,U.date),n=checked(U.date,e.id);
-  var last=lastTime(e);
-  var h='<div class="veil" data-a="veil"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="'+esc(e.name)+'">';
-  h+='<div class="sh-head"><h2>'+esc(e.name)+'</h2><button class="x" data-a="close" aria-label="Close">✕</button></div>';
-  h+='<div class="today"><div class="trow"><div class="tmain"><div class="sub" style="color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">'+DAYN[dow]+' plan</div><div class="big">'+esc(summary(p))+'</div>'+
-    (last?'<div class="last">Last done '+esc(last)+'</div>':'')+
-    '</div>'+slotHtml(e)+'</div><div class="sets" role="group" aria-label="Sets">';
-  for(var i=0;i<total(p);i++){
-    var on=!!(entry(U.date,e.id)&&entry(U.date,e.id).sets[i]);
-    h+='<button class="set" data-a="set" data-v="'+i+'" aria-pressed="'+on+'" aria-label="Set '+(i+1)+'">'+(on?'✓':(i+1))+'</button>';
-  }
-  h+='</div></div>';
-  if(U.fromProg)h+=historyHtml(e);
-  if(!S.admin&&e.plan.ps){U.scope='week';U.target=String(dow)}
-  else if(S.admin){U.scope='all';U.target='all'}
-  // plan editor
-  var tgt=U.target,wkK=weekOf(fromKey(U.date)),wkm=wkK[0],inWk=U.scope==='week',wv=(e.wk&&e.wk[wkm])||{};
-  var base=inWk?(tgt==='all'?weekAll(e,wkm):planFor(e,+tgt,wkK[+tgt-1])):(tgt==='all'?e.plan:planFor(e,+tgt));
-  var dotOf=function(k){return inWk?!!wv[k]:!!(e.ov&&e.ov[k])};
-  var fdays=fixedDays(e),shownDays=[1,2,3,4,5],allLabel='Every day';
-  var isOn=function(k){return fdays.length?(k==='all'?fdays.length===5:fdays.indexOf(k)>=0):(k!=='all'&&tgt===String(k))};
-  h+='<div class="plan"><h3>Edit plan</h3>'+lockedDays(e,wkK)+(true?'':'<div class="tg" role="group" aria-label="Which weeks to change">'+
-    '<button data-a="scope" data-v="all" aria-pressed="'+(!inWk)+'">All weeks</button>'+
-    '<button data-a="scope" data-v="week" aria-pressed="'+inWk+'">Week of '+md(wkm)+' only</button></div>'+
-    '<div class="tg" role="group" aria-label="Which days to edit">'+
-    '<button data-a="target" data-v="all" class="'+(dotOf('all')?'ov':'')+(tgt==='all'?' sel':'')+'" aria-pressed="'+isOn('all')+'">'+allLabel+'</button>'+
-    shownDays.map(function(k){
-      return '<button data-a="target" data-v="'+k+'" class="'+(dotOf(k)?'ov':'')+(tgt===String(k)?' sel':'')+'" aria-pressed="'+isOn(k)+'">'+DAYN[k]+'</button>';
-    }).join('')+'</div>');
-  if(S.admin&&e.plan.ps&&e.plan.weighted){var bwA=bestWeight(e);h+='<div class="hint" style="margin:0 0 10px">'+(bwA?'Heaviest weight done so far: <b>'+bwA+' lb</b>. The member starts there next time.':'No weights logged yet.')+'</div>'}
+function planFieldsHtml(e,base){
+  var h='';
   if(e.plan.ps){
     var pn=e.plan.psn||3,ki;
     for(ki=1;ki<=pn;ki++){(function(k){
@@ -760,6 +736,50 @@ function sheetHtml(){
     h+='<div class="field"><label for="f-w2">Weight</label><select id="f-w2" data-a="pf" data-v="weight2">'+opts2+'</select></div></div>';
     }
   }
+  return h;
+}
+function dayDlgHtml(){
+  var e=byId(U.open);if(!e)return '';
+  var FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  if(U.dayEdit){
+    var dw=U.dayEdit,has=!!(e.ov&&e.ov[dw]&&Object.keys(e.ov[dw]).length);
+    return '<div class="veil mveil" data-a="dayveil"><div class="sheet dsheet" role="dialog" aria-modal="true" aria-label="'+FULL[dw]+' is different"><div class="sh-head"><h2>'+FULL[dw]+' is different</h2><button class="x" data-a="dayclose" aria-label="Done">\u2715</button></div><div class="plan" style="margin-top:0">'+planFieldsHtml(e,planFor(e,dw))+'<div class="tools" style="margin-top:16px"><button class="btn pri" data-a="dayclose">Done</button>'+(has?'<button class="btn" data-a="dayreset">Use the regular plan for this day</button>':'')+'</div></div></div></div>';
+  }
+  return '<div class="veil mveil" data-a="dayveil"><div class="mbox" role="dialog" aria-modal="true" aria-label="Which day is different"><p>Which day is different?</p><div class="tg" style="justify-content:center">'+fixedDays(e).map(function(d){return '<button data-a="daychoose" data-v="'+d+'">'+DAYN[d]+'</button>'}).join('')+'</div><button class="btn" data-a="dayclose">Cancel</button></div></div>';
+}
+function sheetHtml(){
+  var e=byId(U.open);if(!e)return '';
+  var d=fromKey(U.date),dow=d.getDay(),p=planFor(e,dow,U.date),n=checked(U.date,e.id);
+  var last=lastTime(e);
+  var h='<div class="veil" data-a="veil"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="'+esc(e.name)+'">';
+  h+='<div class="sh-head"><h2>'+esc(e.name)+'</h2><button class="x" data-a="close" aria-label="Close">✕</button></div>';
+  h+='<div class="today"><div class="trow"><div class="tmain"><div class="sub" style="color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">'+DAYN[dow]+' plan</div><div class="big">'+esc(summary(p))+'</div>'+
+    (last?'<div class="last">Last done '+esc(last)+'</div>':'')+
+    '</div>'+slotHtml(e)+'</div><div class="sets" role="group" aria-label="Sets">';
+  for(var i=0;i<total(p);i++){
+    var on=!!(entry(U.date,e.id)&&entry(U.date,e.id).sets[i]);
+    h+='<button class="set" data-a="set" data-v="'+i+'" aria-pressed="'+on+'" aria-label="Set '+(i+1)+'">'+(on?'✓':(i+1))+'</button>';
+  }
+  h+='</div></div>';
+  if(U.fromProg)h+=historyHtml(e);
+  if(!S.admin&&e.plan.ps){U.scope='week';U.target=String(dow)}
+  else if(S.admin){U.scope='all';U.target=U.dayEdit?String(U.dayEdit):'all'}
+  // plan editor
+  var tgt=U.target,wkK=weekOf(fromKey(U.date)),wkm=wkK[0],inWk=U.scope==='week',wv=(e.wk&&e.wk[wkm])||{};
+  var base=inWk?(tgt==='all'?weekAll(e,wkm):planFor(e,+tgt,wkK[+tgt-1])):(tgt==='all'?e.plan:planFor(e,+tgt));
+  var dotOf=function(k){return inWk?!!wv[k]:!!(e.ov&&e.ov[k])};
+  var fdays=fixedDays(e),shownDays=[1,2,3,4,5],allLabel='Every day';
+  var isOn=function(k){return fdays.length?(k==='all'?fdays.length===5:fdays.indexOf(k)>=0):(k!=='all'&&tgt===String(k))};
+  h+='<div class="plan">'+(S.admin&&(e.freq==='mwf'||e.freq==='tt')?'<div class="eph"><h3>Edit plan</h3><button class="btn dd" data-a="daypick">A Day Is Different</button></div>':'<h3>Edit plan</h3>')+lockedDays(e,wkK)+(true?'':'<div class="tg" role="group" aria-label="Which weeks to change">'+
+    '<button data-a="scope" data-v="all" aria-pressed="'+(!inWk)+'">All weeks</button>'+
+    '<button data-a="scope" data-v="week" aria-pressed="'+inWk+'">Week of '+md(wkm)+' only</button></div>'+
+    '<div class="tg" role="group" aria-label="Which days to edit">'+
+    '<button data-a="target" data-v="all" class="'+(dotOf('all')?'ov':'')+(tgt==='all'?' sel':'')+'" aria-pressed="'+isOn('all')+'">'+allLabel+'</button>'+
+    shownDays.map(function(k){
+      return '<button data-a="target" data-v="'+k+'" class="'+(dotOf(k)?'ov':'')+(tgt===String(k)?' sel':'')+'" aria-pressed="'+isOn(k)+'">'+DAYN[k]+'</button>';
+    }).join('')+'</div>');
+  if(S.admin&&e.plan.ps&&e.plan.weighted){var bwA=bestWeight(e);h+='<div class="hint" style="margin:0 0 10px">'+(bwA?'Heaviest weight done so far: <b>'+bwA+' lb</b>. The member starts there next time.':'No weights logged yet.')+'</div>'}
+  h+=(S.admin&&U.dayEdit)?'':planFieldsHtml(e,base);
   h+='</div></div></div>';
   if(!S.admin){
     if(e.plan.ps)h=h.replace('<h3>Edit plan</h3>','<h3>Your sets</h3>').replace('<select id="f-fr"','<select disabled id="f-fr"').replace('<div class="grid3"','<div class="hint" style="margin:0 0 8px">Set what you did for each row, then tap its circle above.</div><div class="grid3"');
@@ -1049,11 +1069,12 @@ function keepSheet(){var s=document.getElementById('sheet');U._sheetScroll=s?s.s
 app.addEventListener('click',function(ev){
   var t=ev.target.closest('[data-a]');if(!t)return;
   var a=t.getAttribute('data-a'),v=t.getAttribute('data-v');
+  if((a==='dayveil')&&ev.target===t){U.dayEdit=null;U.dayPick=false;return render()}
   if(a==='msgok'){if(ev.target!==t&&t.classList.contains('veil'))return;U.msg=null;return render()}
   if(a==='lbveil'){if(ev.target!==t)return;U.big=null;return render()}
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
-  if(!S.admin&&/^(rmask|rmgo|onoff|add|addgo|clearask|clearlog|clearall|restore|scope|target|resetday|sd|sm)$/.test(a))return;
+  if(!S.admin&&/^(rmask|rmgo|onoff|daypick|daychoose|dayreset|add|addgo|clearask|clearlog|clearall|restore|scope|target|resetday|sd|sm)$/.test(a))return;
   if(a==='admask'){U.askAdmin=true;U.admBad=false;render();var ac=document.getElementById('admcode');if(ac)ac.focus();return}
   if(a==='admno'){U.askAdmin=false;U.admBad=false;return render()}
   if(a==='admgo'){var cv=document.getElementById('admcode').value.trim();if(cv==='1122'){S.admin=1;U.askAdmin=false;U.admBad=false;persist()}else U.admBad=true;return render()}
@@ -1115,6 +1136,10 @@ app.addEventListener('click',function(ev){
   else if(a==='unskip'){if(S.skip&&S.skip[U.date]){delete S.skip[U.date][v];if(!Object.keys(S.skip[U.date]).length)delete S.skip[U.date]}persist();render()}
   else if(a==='leftsort'){U.leftSort=!U.leftSort;render()}
   else if(a==='onoff'){var oe=byId(v);if(oe){if(oe.freq==='off'){var us=usualFor(oe);oe.freq=us.freq;oe.days=(us.days||[]).slice();delete oe.prev}else{oe.prev={freq:oe.freq,days:(oe.days||[]).slice()};oe.freq='off';oe.days=[]}persist();render()}}
+  else if(a==='daypick'){U.dayPick=true;U.dayEdit=null;keepSheet();render()}
+  else if(a==='daychoose'){U.dayPick=false;U.dayEdit=+v;keepSheet();render()}
+  else if(a==='dayclose'){U.dayPick=false;U.dayEdit=null;keepSheet();render()}
+  else if(a==='dayreset'){var de=byId(U.open);if(de&&U.dayEdit&&de.ov)delete de.ov[U.dayEdit];U.dayEdit=null;persist();keepSheet();render()}
   else if(a==='rmask'){U.rmId=v;render()}
   else if(a==='rmno'){U.rmId=null;render()}
   else if(a==='rmgo'){var re=byId(v);re.freq='off';re.days=[];U.rmId=null;persist();render()}
@@ -1164,6 +1189,7 @@ app.addEventListener('input',function(ev){
 });
 document.addEventListener('keydown',function(ev){
   if(ev.key==='Enter'&&ev.target.id==='admcode'){var gb=document.querySelector('[data-a=admgo]');if(gb)gb.click();return}
+  if(ev.key==='Escape'&&(U.dayPick||U.dayEdit)){U.dayPick=false;U.dayEdit=null;render();return}
   if(ev.key==='Escape'&&(U.big||U.open)){if(U.big)U.big=null;else U.open=null;render()}
 });
 render();
