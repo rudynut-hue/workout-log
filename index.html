@@ -388,7 +388,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 36.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 37.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -546,14 +546,14 @@ function viewProgress(){
   return h;
 }
 /* ---------- weekly sheet: preview, print, text and email ---------- */
-var GCOL={daily:'FFFF00',mwf:'FF9933',tt:'92D050',twice:'FF99FF',once:'66FFFF',custom:'D9D9D9'};
+var GCOL={daily:'',mwf:'',tt:'',twice:'',once:'',custom:''};
 var GORDER=['daily','mwf','tt','twice','once'];
 var LEGEND=['Every Day','3X A Week (M,W,F)','2X A Week (Tu,Th)','2X A Week  Pick Days','1X A Week  Pick Day'];
 var DAYFULL=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 function landDate(k){var m=weekOf(fromKey(k))[0];if(m!==weekOf(new Date())[0])return m;var n=new Date(),g=n.getDay();if(g===6)n.setDate(n.getDate()-1);else if(g===0)n.setDate(n.getDate()-2);return dkey(n)}
 function shiftWeek(k,n){var d=fromKey(k);d.setDate(d.getDate()+7*n);return dkey(d)}
 function amountOne(sets,reps,wt,weighted,sh){return (sets>1&&/^\d/.test(reps||'')?sets+'X':'')+(reps||'')+(sh?' ('+sh+' sh)':'')+(weighted&&wt!==''&&wt!=null?' @ '+wt+' lb':'')}
-function amountText(p){if(p.setsonly)return '';var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?p.shelves:'');if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?p.shelves2:'');return a}
+function amountText(p){if(p.setsonly)return p.sets+(+p.sets===1?' set':' sets');var a=amountOne(p.sets,p.reps,p.weight,p.weighted,p.shelf?p.shelves:'');if(p.two&&+p.sets2>0)a+=' + '+amountOne(p.sets2,p.reps2,p.weight2,p.weighted,p.shelf?p.shelves2:'');return a}
 function cellText(e,k){
   var n=checked(k,e.id);if(!n)return '';
   var en=entry(k,e.id),sn=en.snap||planFor(e,fromKey(k).getDay(),k);
@@ -577,12 +577,12 @@ function weekModel(mon){
 }
 function md(k){var d=fromKey(k);return (d.getMonth()+1)+'/'+d.getDate()}
 function sheetTable(rows,m){
-  var h='<table><tbody><tr><td>Name</td><td>'+esc(S.name||'')+'</td>'+LEGEND.map(function(t,i){return '<td class="g-'+GORDER[i]+'">'+t+'</td>'}).join('')+'</tr>';
+  var h='<table><tbody><tr><td>Name</td><td>'+esc(S.name||'')+'</td>'+LEGEND.map(function(t,i){return '<td>'+t+'</td>'}).join('')+'</tr>';
   h+='<tr><td></td><td>Date</td>'+m.dates.map(function(k){return '<td>'+md(k)+'</td>'}).join('')+'</tr>';
   h+='<tr><td>Activity</td><td>Amount</td>'+DAYFULL.map(function(d){return '<td>'+d+'</td>'}).join('')+'</tr>';
   rows.forEach(function(r){
-    var c=r.group?' class="g-'+r.group+'"':'';
-    h+='<tr><td'+c+'>'+esc(r.name)+'</td><td'+c+'>'+esc(r.amount)+'</td>'+r.cells.map(function(t,i){return '<td'+(r.group&&r.sched[i]?c:'')+'>'+esc(t)+'</td>'}).join('')+'</tr>';
+    var c='';
+    h+='<tr><td'+c+'>'+esc(r.name)+'</td><td'+c+'>'+esc(r.amount)+'</td>'+r.cells.map(function(t){return '<td>'+esc(t)+'</td>'}).join('')+'</tr>';
   });
   return h+'</tbody></table>';
 }
