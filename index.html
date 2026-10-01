@@ -88,6 +88,7 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .xrow .tg{margin:0 0 4px;gap:5px}
 .xrow .tg button{padding:4px 11px;min-height:38px}
 .xrow .tg button.md{margin-left:auto}.xrow .tg button.md~button.md{margin-left:0}
+.xdiv{background:var(--ink);color:var(--bg);border-radius:8px;padding:9px 14px;font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;margin:6px 0 2px}
 .xrow.off{background:transparent;border-style:dashed;opacity:.6}
 .xrow.off .nm{color:var(--muted);font-weight:500}
 .dchips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%}
@@ -603,20 +604,17 @@ function viewSetup(){
   var f=U.filter,q=U.q.toLowerCase();
   var list=S.ex.filter(function(e){
     if(q&&e.name.toLowerCase().indexOf(q)<0)return false;
-    if(f==='sched')return e.freq!=='off';
-    if(f==='off')return e.freq==='off';
     return true;
   }).sort(function(x,y){return x.name.localeCompare(y.name,undefined,{sensitivity:'base',ignorePunctuation:true})});
-  var offN=S.ex.filter(function(e){return e.freq==='off'}).length,wkU=weekOf(fromKey(U.date));
+  var wkU=weekOf(fromKey(U.date));
   var h='<div class="top"><h1>Exercises</h1><div class="sub">'+S.ex.length+' total</div></div>';
-  if(offN&&f==='sched')h+='<div class="empty" style="margin-top:14px"><b>'+offN+' exercises are not scheduled yet.</b> <button class="link" data-a="filter" data-v="off">Show them</button> and pick a group for each.</div>';
   h+='<div class="tools"><input type="search" id="q" placeholder="Search exercises" value="'+esc(U.q)+'" aria-label="Search exercises">'+
-    '<select class="sel" id="flt" aria-label="Filter">'+
-    [['all','All'],['sched','Scheduled'],['off','Not scheduled']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
+    '<select class="sel" id="flt" aria-label="Sort by schedule">'+
+    [['all','All'],['daily','Every day'],['mwf','Mon \u00b7 Wed \u00b7 Fri'],['tt','Tue \u00b7 Thu'],['twice','2\u00d7 a week'],['once','Once a week'],['off','Not scheduled']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
   if(!S.admin&&list.some(isFlex))h+='<div class="hint" style="margin:10px 0 0">Once and twice a week exercises start clear. Tap the day you do them (week of '+md(wkU[0])+').</div>';
-  h+='<div class="list">'+(list.length?list.map(function(e){
-    return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+(S.admin?adminDays(e):lockedDays(e,wkU,true))+'</div>';
-  }).join(''):'<div class="empty">No exercises match.</div>')+'</div>';
+  var xr=function(e){return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+(S.admin?adminDays(e):lockedDays(e,wkU,true))+'</div>'};
+  var top=f==='all'?list:list.filter(function(e){return e.freq===f}),rest=f==='all'?[]:list.filter(function(e){return e.freq!==f});
+  h+='<div class="list">'+(list.length?top.map(xr).join('')+(f==='all'?'':(top.length?'':'<div class="empty">None right now.</div>')+(rest.length?'<div class="xdiv">All other exercises</div>'+rest.map(xr).join(''):'')):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
   if(U.adding)h+='<input type="text" id="newname" class="sel" style="flex:1 1 180px" placeholder="Exercise name" aria-label="New exercise name"><button class="btn pri" data-a="addgo">Add</button><button class="btn" data-a="addno">Cancel</button>';
   else h+=(S.admin?'<button class="btn" data-a="add">Add an exercise</button>':'')+'<button class="btn" data-a="backup">Backup</button>';
@@ -626,7 +624,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 80.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 81.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
