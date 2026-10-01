@@ -262,6 +262,14 @@ var PH = load(PKEY) || {};
 (function(){ if(S.mig13)return;
   S.ex.forEach(function(e){if(/^med-x core isolator$/i.test(e.name))e.plan.weighted=1});
   S.mig13=1; save(KEY,S); })();
+(function(){ if(S.mig14)return;
+  var ok=/^(Small|Medium|Large)$/;
+  S.ex.forEach(function(e){if(/^sledgehammer & tire$/i.test(e.name)){
+    if(!ok.test(e.plan.weight||''))e.plan.weight='Medium';
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].weight!=null&&!ok.test(e.ov[k].weight))e.ov[k].weight='Medium'});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].weight!=null&&!ok.test(e.wk[m][k].weight))e.wk[m][k].weight='Medium'})});
+  }});
+  S.mig14=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -403,7 +411,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 42.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 43.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -459,7 +467,7 @@ function sheetHtml(){
     (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two));
   if(e.plan.weighted){
     if(e.plan.hammer){
-      var ho='<option value="">Not set</option>'+['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(base.weight===x?' selected':'')+'>'+x+'</option>'}).join('');
+      var hw=base.weight||'Medium',ho=['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(hw===x?' selected':'')+'>'+x+'</option>'}).join('');
       h+='<div class="field"><label for="f-w">Hammer</label><select id="f-w" data-a="pf" data-v="weight">'+ho+'</select></div>';
     } else {
     var opts=wtOpts(base.weight,wtMin(e),wtExtra(e),wtStep(e),wtMax(e));
