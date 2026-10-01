@@ -633,7 +633,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 83.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 84.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -683,7 +683,7 @@ function sheetHtml(){
   if(S.admin&&e.plan.ps){
     var bwA=bestWeight(e);
     h+='<div class="plan"><h3>Edit plan</h3>'+lockedDays(e,weekOf(d))+'<div class="hint" style="margin:0 0 10px">'+(e.plan.weighted?(bwA?'Heaviest weight done so far: <b>'+bwA+' lb</b>. The member starts there next time. ':'No weights logged yet. '):'')+'The member fills in the sets on the Today page, so there is nothing to set here.</div>'+
-      '<div class="field"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div></div></div></div>';
+      '</div></div></div>';
     return h;
   }
   if(!S.admin&&e.plan.ps){U.scope='week';U.target=String(dow)}
@@ -736,8 +736,6 @@ function sheetHtml(){
     h+='<div class="field"><label for="f-w2">Weight</label><select id="f-w2" data-a="pf" data-v="weight2">'+opts2+'</select></div></div>';
     }
   }
-  h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
-    Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   h+='</div></div></div>';
   if(!S.admin){
     if(e.plan.ps)h=h.replace('<h3>Edit plan</h3>','<h3>Your sets</h3>').replace('<select id="f-fr"','<select disabled id="f-fr"').replace('<div class="grid3"','<div class="hint" style="margin:0 0 8px">Set what you did for each row, then tap its circle above.</div><div class="grid3"');
