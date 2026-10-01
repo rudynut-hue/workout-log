@@ -367,7 +367,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 29.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 30.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -406,7 +406,7 @@ function sheetHtml(){
     }).join('')+'</div>';
   h+='<div class="grid3"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+
-    (e.plan.timed?timeField(base.reps,e.plan.tunit):'<div class="field"><label for="f-reps">Reps</label><input id="f-reps" data-a="pf" data-v="reps" value="'+esc(base.reps)+'" autocomplete="off"></div>');
+    (e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps));
   if(e.plan.weighted){
     var opts='<option value="">Not set</option>';
     for(var w=5;w<=300;w+=5)opts+='<option value="'+w+'"'+(String(base.weight)===String(w)?' selected':'')+'>'+w+' lb</option>';
@@ -422,6 +422,13 @@ function sheetHtml(){
     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   h+='</div></div></div>';
   return h;
+}
+function repsField(cur){
+  var list=['3-5','5-8','8-10','10-12'],o='';
+  if(cur&&list.indexOf(cur)<0)o+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
+  else if(!cur)o+='<option value="" selected>Not set</option>';
+  o+=list.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('');
+  return '<div class="field"><label for="f-reps">Reps</label><select id="f-reps" data-a="pf" data-v="reps">'+o+'</select></div>';
 }
 function timeField(cur,unit){
   function secLabel(n){var m=Math.floor(n/60),r=n%60;return m?(m+' min'+(r?' '+r+' sec':'')):r+' sec'}
