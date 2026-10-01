@@ -560,7 +560,7 @@ function viewToday(){
   if(flex.length){
     h+='<div class="sec"><h2>Pick your days</h2><small>counts reset every Monday</small></div><div class="list">'+
       flex.map(function(e){
-        var rm=U.rmId===e.id?'<div class="rmask" role="alertdialog" aria-label="Remove '+esc(e.name)+'"><b>Are you sure you want to remove '+esc(e.name)+'?</b> It stays off your list until you add it back on the Exercises tab (choose Not scheduled, then set its schedule). Your history is kept.<div class="tools"><button class="btn pri" data-a="rmgo" data-v="'+e.id+'">Yes, remove</button><button class="btn" data-a="rmno">Cancel</button></div></div>'
+        var rm=!S.admin?'':U.rmId===e.id?'<div class="rmask" role="alertdialog" aria-label="Remove '+esc(e.name)+'"><b>Are you sure you want to remove '+esc(e.name)+'?</b> It stays off your list until you add it back on the Exercises tab (choose Not scheduled, then set its schedule). Your history is kept.<div class="tools"><button class="btn pri" data-a="rmgo" data-v="'+e.id+'">Yes, remove</button><button class="btn" data-a="rmno">Cancel</button></div></div>'
           :'<button class="rmbtn" data-a="rmask" data-v="'+e.id+'" aria-label="Remove '+esc(e.name)+'">Remove</button>';
         return '<div class="rowwrap">'+rowHtml(e,dow,wk)+rm+'</div>'}).join('')+'</div>';
   }
@@ -591,24 +591,29 @@ function viewSetup(){
     '<select class="sel" id="flt" aria-label="Filter">'+
     [['all','All'],['sched','Scheduled'],['off','Not scheduled']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
   h+='<div class="list">'+(list.length?list.map(function(e){
-    return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button><select class="sel" data-a="freq" data-v="'+e.id+'" aria-label="Schedule for '+esc(e.name)+'">'+
+    return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button><select class="sel" data-a="freq" data-v="'+e.id+'"'+(S.admin?'':' disabled')+' aria-label="Schedule for '+esc(e.name)+'">'+
      Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   }).join(''):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
   if(U.adding)h+='<input type="text" id="newname" class="sel" style="flex:1 1 180px" placeholder="Exercise name" aria-label="New exercise name"><button class="btn pri" data-a="addgo">Add</button><button class="btn" data-a="addno">Cancel</button>';
-  else h+='<button class="btn" data-a="add">Add an exercise</button><button class="btn" data-a="backup">Backup</button>';
+  else h+=(S.admin?'<button class="btn" data-a="add">Add an exercise</button>':'')+'<button class="btn" data-a="backup">Backup</button>';
   h+='</div>';
   if(U.showBackup){
     h+='<div class="hint" style="margin-bottom:8px">Your log lives only in this browser on this phone. Copy this text somewhere safe. To restore, paste it below and tap Restore. Photos are not included.</div>'+
-      '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
-      '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
+      '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
+      ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 73.</div>';
-  h+='<div class="sec"><h2>Start over</h2></div>';
-  if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
-  if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 74.</div>';
+  if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
+  if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
+  if(!S.admin){}
+  else if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
   else if(U.confirm==='all')h+='<div class="empty"><b>Reset everything?</b> This erases your history, photos, and any changes to groups, plans and added exercises, and puts the original list back. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearall">Yes, reset everything</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
   else h+='<div class="tools"><button class="btn" data-a="clearask" data-v="log">Clear my workout history</button><button class="btn" data-a="clearask" data-v="all">Reset everything</button></div>';
+  h+='<div class="sec"><h2>Admin</h2></div>';
+  if(S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">Admin mode is on, so plans and schedules can be changed on this phone.</div><div class="tools"><button class="btn" data-a="admlock">Lock</button></div>';
+  else if(U.askAdmin)h+='<div class="tools"><input type="password" inputmode="numeric" id="admcode" class="sel" style="flex:1 1 140px" placeholder="Admin code" aria-label="Admin code" autocomplete="off"><button class="btn pri" data-a="admgo">Unlock</button><button class="btn" data-a="admno">Cancel</button></div>'+(U.admBad?'<div class="hint" role="status" style="margin-top:8px">That code is not right.</div>':'');
+  else h+='<div class="hint" style="margin:0 0 10px">Plans and schedules are locked on this phone.</div><div class="tools"><button class="btn" data-a="admask">Admin</button></div>';
   return h;
 }
 function wtMin(e){var n=e.name.toLowerCase();
@@ -645,6 +650,7 @@ function sheetHtml(){
   }
   h+='</div></div>';
   if(U.fromProg)h+=historyHtml(e);
+  if(!S.admin){h+='</div></div>';return h}
   // plan editor
   var tgt=U.target,wkK=weekOf(fromKey(U.date)),wkm=wkK[0],inWk=U.scope==='week',wv=(e.wk&&e.wk[wkm])||{};
   var base=inWk?(tgt==='all'?weekAll(e,wkm):planFor(e,+tgt,wkK[+tgt-1])):(tgt==='all'?e.plan:planFor(e,+tgt));
@@ -987,6 +993,11 @@ app.addEventListener('click',function(ev){
   if(a==='lbveil'){if(ev.target!==t)return;U.big=null;return render()}
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
+  if(!S.admin&&/^(rmask|rmgo|add|addgo|clearask|clearlog|clearall|restore|scope|target|resetday)$/.test(a))return;
+  if(a==='admask'){U.askAdmin=true;U.admBad=false;render();var ac=document.getElementById('admcode');if(ac)ac.focus();return}
+  if(a==='admno'){U.askAdmin=false;U.admBad=false;return render()}
+  if(a==='admgo'){var cv=document.getElementById('admcode').value.trim();if(cv==='1122'){S.admin=1;U.askAdmin=false;U.admBad=false;persist()}else U.admBad=true;return render()}
+  if(a==='admlock'){S.admin=0;U.rmId=null;U.confirm=null;U.adding=false;U.showBackup=false;persist();return render()}
   if(a==='tab'){U.note='';U.confirm=null;U.tab=v;U.open=null;render()}
   else if(a==='openp'){U.fromProg=1;U.date=weekOf(new Date())[Math.min(4,(new Date().getDay()+6)%7)];U.open=v;U.target='all';U.scope='all';U._sheetScroll=0;render()}
   else if(a==='allhist'){keepSheet();U.allHist=!U.allHist;render()}
@@ -1046,7 +1057,7 @@ app.addEventListener('click',function(ev){
     var msg=document.getElementById('rmsg');
     try{var o=JSON.parse(document.getElementById('rs').value);
       if(!o||!Array.isArray(o.ex)||typeof o.log!=='object')throw 0;
-      S=o;S.next=S.next||1000;persist();U.showBackup=false;render();
+      var wasAdm=S.admin;S=o;S.admin=wasAdm;S.next=S.next||1000;persist();U.showBackup=false;render();
     }catch(x){msg.textContent='That text is not a valid backup.'}
   }
 });
@@ -1055,6 +1066,7 @@ app.addEventListener('change',function(ev){
   if(t.id==='wkname'){S.name=t.value.trim();persist();return}
   if(t.id==='wkphone'){S.phone=t.value.trim();persist();return}
   if(t.id==='flt'){U.filter=t.value;return render()}
+  if(!S.admin&&(a==='freq'||a==='ut'||a==='uw'||a==='pf'))return;
   if(a==='freq'){var fe=byId(t.getAttribute('data-v'));fe.freq=t.value;fe.days=(LEGACY[t.value]||[]).slice();persist();keepSheet();return render()}
   if(a==='ut'){byId(U.open).plan.timed=t.checked?1:0;persist();keepSheet();return render()}
   if(a==='uw'){byId(U.open).plan.weighted=t.checked?1:0;persist();keepSheet();return render()}
@@ -1078,6 +1090,7 @@ app.addEventListener('input',function(ev){
   if(ev.target.id==='q'){U.q=ev.target.value;var pos=ev.target.selectionStart;render();var i=document.getElementById('q');i.focus();i.setSelectionRange(pos,pos)}
 });
 document.addEventListener('keydown',function(ev){
+  if(ev.key==='Enter'&&ev.target.id==='admcode'){var gb=document.querySelector('[data-a=admgo]');if(gb)gb.click();return}
   if(ev.key==='Escape'&&(U.big||U.open)){if(U.big)U.big=null;else U.open=null;render()}
 });
 render();
