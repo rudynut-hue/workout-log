@@ -85,6 +85,8 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .xrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px}
 .xrow .nm{flex:1;min-width:0;background:none;border:0;text-align:left;padding:6px 0;font-weight:600;overflow-wrap:anywhere}
 .xrow .sel{width:9.5rem;max-width:45%}
+.xrow.off{background:transparent;border-style:dashed;opacity:.6}
+.xrow.off .nm{color:var(--muted);font-weight:500}
 .dchips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%}
 .dc{min-height:44px;min-width:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.9rem}
 .dc.mode{margin-left:auto}.dc.mode~.dc.mode{margin-left:0}
@@ -580,7 +582,7 @@ function viewSetup(){
     '<select class="sel" id="flt" aria-label="Filter">'+
     [['sched','Scheduled'],['off','Not scheduled'],['all','All']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
   h+='<div class="list">'+(list.length?list.map(function(e){
-    return '<div class="xrow"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button><select class="sel" data-a="freq" data-v="'+e.id+'" aria-label="Schedule for '+esc(e.name)+'">'+
+    return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button><select class="sel" data-a="freq" data-v="'+e.id+'" aria-label="Schedule for '+esc(e.name)+'">'+
      Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   }).join(''):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
@@ -592,7 +594,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 70.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 71.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
