@@ -469,6 +469,15 @@ var PH = load(PKEY) || {};
     Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
   }});
   S.mig37=1; save(KEY,S); })();
+(function(){ if(S.mig38)return;
+  var L=['5','10','15','20','25'],ok=function(v){return L.indexOf(String(v))>=0};
+  S.ex.forEach(function(e){if(/^ladder climbs$/i.test(e.name)){
+    e.plan.rl=L.slice();e.plan.timed=0;
+    if(!ok(e.plan.reps))e.plan.reps='';
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].reps!=null&&!ok(e.ov[k].reps))e.ov[k].reps=''});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
+  }});
+  S.mig38=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -653,7 +662,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 88.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 89.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
