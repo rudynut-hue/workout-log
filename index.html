@@ -466,8 +466,18 @@ function entry(dk,id){return S.log[dk]&&S.log[dk][id]}
 function checked(dk,id){var e=entry(dk,id);return e?e.sets.filter(Boolean).length:0}
 function isDone(ex,dk){var p=planFor(ex,fromKey(dk).getDay(),dk);return checked(dk,ex.id)>=total(p)}
 function weekCount(ex,wk){return wk.filter(function(k){return isDone(ex,k)}).length}
-function scheduled(ex,dow){
-  return fixedDays(ex).indexOf(dow)>=0;
+function pickedOn(ex,dk){var m=weekOf(fromKey(dk))[0];return !!(ex.pick&&ex.pick[m]&&ex.pick[m].indexOf(fromKey(dk).getDay())>=0)}
+function isFlex(ex){return ex.freq==='twice'||ex.freq==='once'}
+function scheduled(ex,dow,dk){
+  return fixedDays(ex).indexOf(dow)>=0||!!(dk&&isFlex(ex)&&pickedOn(ex,dk));
+}
+function lockedDays(e,wk){
+  var fd=fixedDays(e),fx=isFlex(e),h='<div class="tg" role="group" aria-label="Days">';
+  [1,2,3,4,5].forEach(function(k){
+    var on=fx?pickedOn(e,wk[k-1]):fd.indexOf(k)>=0;
+    h+='<button '+(fx?'data-a="pickday" data-v="'+e.id+'|'+k+'"':'disabled')+' aria-pressed="'+on+'">'+DAYN[k]+'</button>';
+  });
+  return h+'</div>'+(fx?'<div class="hint">Tap the day you are doing this.</div>':'');
 }
 function fixedDays(ex){
   if(!(ex.freq==='daily'||ex.freq==='mwf'||ex.freq==='tt'||ex.freq==='custom'))return [];
@@ -551,8 +561,8 @@ function viewToday(){
     var dd=fromKey(k),any=S.ex.some(function(e){return checked(k,e.id)>0});
     return '<button class="day" data-a="day" data-v="'+k+'" aria-pressed="'+(k===U.date)+'"><b>'+DAYN[dd.getDay()]+'</b><span>'+dd.getDate()+'</span><i class="'+(any?'has':'')+'"></i></button>';
   }).join('')+'</div>';
-  var sched=S.ex.filter(function(e){return scheduled(e,dow)});
-  var flex=S.ex.filter(function(e){return e.freq==='twice'||e.freq==='once'});
+  var sched=S.ex.filter(function(e){return scheduled(e,dow,U.date)});
+  var flex=S.ex.filter(function(e){return isFlex(e)&&!pickedOn(e,U.date)});
   var doneN=sched.filter(function(e){return isDone(e,U.date)}).length;
   h+='<div class="sec"><h2>Scheduled</h2><small>'+doneN+' of '+sched.length+' done</small></div>';
   if(!sched.length)h+='<div class="empty"><b>Nothing scheduled for '+DAYN[dow]+'.</b> Set which days each exercise belongs to on the Exercises tab.</div>';
@@ -603,7 +613,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 75.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 76.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -656,14 +666,14 @@ function sheetHtml(){
   var dotOf=function(k){return inWk?!!wv[k]:!!(e.ov&&e.ov[k])};
   var fdays=fixedDays(e),shownDays=[1,2,3,4,5],allLabel='Every day';
   var isOn=function(k){return fdays.length?(k==='all'?fdays.length===5:fdays.indexOf(k)>=0):(k!=='all'&&tgt===String(k))};
-  h+='<div class="plan"><h3>Edit plan</h3><div class="tg" role="group" aria-label="Which weeks to change">'+
+  h+='<div class="plan"><h3>Edit plan</h3>'+(!S.admin?lockedDays(e,wkK):'<div class="tg" role="group" aria-label="Which weeks to change">'+
     '<button data-a="scope" data-v="all" aria-pressed="'+(!inWk)+'">All weeks</button>'+
     '<button data-a="scope" data-v="week" aria-pressed="'+inWk+'">Week of '+md(wkm)+' only</button></div>'+
     '<div class="tg" role="group" aria-label="Which days to edit">'+
     '<button data-a="target" data-v="all" class="'+(dotOf('all')?'ov':'')+(tgt==='all'?' sel':'')+'" aria-pressed="'+isOn('all')+'">'+allLabel+'</button>'+
     shownDays.map(function(k){
       return '<button data-a="target" data-v="'+k+'" class="'+(dotOf(k)?'ov':'')+(tgt===String(k)?' sel':'')+'" aria-pressed="'+isOn(k)+'">'+DAYN[k]+'</button>';
-    }).join('')+'</div>';
+    }).join('')+'</div>');
   if(e.plan.ps){
     var pn=e.plan.psn||3,ki;
     for(ki=1;ki<=pn;ki++){(function(k){
@@ -825,7 +835,7 @@ function weekModel(mon){
     var rows=list.filter(function(e){return (e.pg!=null?e.pg:Math.floor(S.ex.indexOf(e)/14))===pg}).map(function(e){
       var g=e.freq==='off'?'':e.freq;
       return {name:e.name,group:g,amount:amountText(weekAll(e,dates[0])),
-        sched:dates.map(function(k){return scheduled(e,fromKey(k).getDay())}),
+        sched:dates.map(function(k){return scheduled(e,fromKey(k).getDay(),k)}),
         cells:dates.map(function(k){return cellText(e,k)})};
     });
     if(rows.length){sheets.push(rows);pageNums.push(pg+1)}
@@ -1028,6 +1038,13 @@ app.addEventListener('click',function(ev){
     persist();render();
   }
   else if(a==='target'){keepSheet();U.target=v;render()}
+  else if(a==='pickday'){
+    var pp=v.split('|'),pe=byId(pp[0]),di=+pp[1],wkd=weekOf(fromKey(U.date)),dk2=wkd[di-1],now=new Date();
+    if(dk2>dkey(now)){alert('Wrong day. Today is '+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]+'.');return}
+    pe.pick=pe.pick||{};var arr=pe.pick[wkd[0]]||[],ix=arr.indexOf(di),lim=pe.freq==='once'?1:2;
+    if(ix>=0){if(checked(dk2,pe.id)>0)return;arr.splice(ix,1)}
+    else{if(arr.length>=lim){if(lim===1)arr=[];else{alert('You already picked '+lim+' days this week. Tap one of them to unpick it first.');return}}arr.push(di)}
+    pe.pick[wkd[0]]=arr;persist();keepSheet();render()}
   else if(a==='resetday'){keepSheet();var e2=byId(U.open);
     if(U.scope==='week'){var wk2=weekOf(fromKey(U.date))[0];if(e2.wk&&e2.wk[wk2]){delete e2.wk[wk2][U.target];if(!Object.keys(e2.wk[wk2]).length)delete e2.wk[wk2]}}
     else delete e2.ov[U.target];
