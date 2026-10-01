@@ -485,7 +485,7 @@ function lockedDays(e,wk,nohint){
   var fd=fixedDays(e),fx=isFlex(e),h='<div class="tg" role="group" aria-label="Days">';
   [1,2,3,4,5].forEach(function(k){
     var on=fx?pickedOn(e,wk[k-1]):fd.indexOf(k)>=0;
-    h+='<button '+(fx?'data-a="pickday" data-v="'+e.id+'|'+k+'"':'disabled')+' aria-pressed="'+on+'">'+DAYN[k]+'</button>';
+    h+='<button '+(fx?'data-a="pickday" data-v="'+e.id+'|'+k+'"':S.admin?'data-a="sd" data-v="'+e.id+'|'+k+'"':'disabled')+' aria-pressed="'+on+'">'+DAYN[k]+'</button>';
   });
   return h+'</div>'+(fx&&!nohint?'<div class="hint">Tap the day you are doing this.</div>':'');
 }
@@ -623,7 +623,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 78.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 79.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -672,18 +672,19 @@ function sheetHtml(){
   if(U.fromProg)h+=historyHtml(e);
   if(S.admin&&e.plan.ps){
     var bwA=bestWeight(e);
-    h+='<div class="plan"><h3>Edit plan</h3><div class="hint" style="margin:0 0 10px">'+(e.plan.weighted?(bwA?'Heaviest weight done so far: <b>'+bwA+' lb</b>. The member starts there next time. ':'No weights logged yet. '):'')+'The member fills in the sets on the Today page, so there is nothing to set here.</div>'+
+    h+='<div class="plan"><h3>Edit plan</h3>'+lockedDays(e,weekOf(d))+'<div class="hint" style="margin:0 0 10px">'+(e.plan.weighted?(bwA?'Heaviest weight done so far: <b>'+bwA+' lb</b>. The member starts there next time. ':'No weights logged yet. '):'')+'The member fills in the sets on the Today page, so there is nothing to set here.</div>'+
       '<div class="field"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div></div></div></div>';
     return h;
   }
   if(!S.admin&&e.plan.ps){U.scope='week';U.target=String(dow)}
+  else if(S.admin){U.scope='all';U.target='all'}
   // plan editor
   var tgt=U.target,wkK=weekOf(fromKey(U.date)),wkm=wkK[0],inWk=U.scope==='week',wv=(e.wk&&e.wk[wkm])||{};
   var base=inWk?(tgt==='all'?weekAll(e,wkm):planFor(e,+tgt,wkK[+tgt-1])):(tgt==='all'?e.plan:planFor(e,+tgt));
   var dotOf=function(k){return inWk?!!wv[k]:!!(e.ov&&e.ov[k])};
   var fdays=fixedDays(e),shownDays=[1,2,3,4,5],allLabel='Every day';
   var isOn=function(k){return fdays.length?(k==='all'?fdays.length===5:fdays.indexOf(k)>=0):(k!=='all'&&tgt===String(k))};
-  h+='<div class="plan"><h3>Edit plan</h3>'+(!S.admin?lockedDays(e,wkK):'<div class="tg" role="group" aria-label="Which weeks to change">'+
+  h+='<div class="plan"><h3>Edit plan</h3>'+lockedDays(e,wkK)+(true?'':'<div class="tg" role="group" aria-label="Which weeks to change">'+
     '<button data-a="scope" data-v="all" aria-pressed="'+(!inWk)+'">All weeks</button>'+
     '<button data-a="scope" data-v="week" aria-pressed="'+inWk+'">Week of '+md(wkm)+' only</button></div>'+
     '<div class="tg" role="group" aria-label="Which days to edit">'+
@@ -725,11 +726,6 @@ function sheetHtml(){
     h+='<div class="field"><label for="f-w2">Weight</label><select id="f-w2" data-a="pf" data-v="weight2">'+opts2+'</select></div></div>';
     }
   }
-  if(!S.admin){}
-  else if(inWk)h+=tgt==='all'?'<div class="hint">Only changes the week of '+md(wkm)+'. Other weeks keep their plan.'+(wv.all?' <button class="link" data-a="resetday">Use the regular plan for this week</button>':'')+'</div>'
-    :'<div class="hint">Only changes '+DAYN[+tgt]+' of the week of '+md(wkm)+'.'+(wv[tgt]?' <button class="link" data-a="resetday">Undo this day</button>':'')+'</div>';
-  else h+=tgt==='all'?'<div class="hint">Applies to every week, on every day unless a day has its own plan (marked with a yellow dot).</div>'
-    :'<div class="hint">Changes '+DAYN[+tgt]+' in every week. <button class="link" data-a="resetday">Use the every-day plan for this day</button></div>';
   h+='<div class="field" style="margin-top:14px"><label for="f-fr">Schedule</label><select id="f-fr" data-a="freq" data-v="'+e.id+'">'+
     Object.keys(FREQ).map(function(k){return '<option value="'+k+'"'+(e.freq===k?' selected':'')+'>'+FREQ[k]+'</option>'}).join('')+'</select></div>';
   h+='</div></div></div>';
