@@ -279,6 +279,15 @@ var PH = load(PKEY) || {};
     Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok.test(e.wk[m][k].reps))e.wk[m][k].reps=''})});
   }});
   S.mig15=1; save(KEY,S); })();
+(function(){ if(S.mig16)return;
+  var L=['5','10','15','20','25'],ok=function(v){return L.indexOf(String(v))>=0};
+  S.ex.forEach(function(e){if(/^pvc pipe walk ups$/i.test(e.name)){
+    e.plan.rl=L.slice();e.plan.timed=0;
+    if(!ok(e.plan.reps))e.plan.reps='';
+    Object.keys(e.ov||{}).forEach(function(k){if(e.ov[k]&&e.ov[k].reps!=null&&!ok(e.ov[k].reps))e.ov[k].reps=''});
+    Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){if(e.wk[m][k]&&e.wk[m][k].reps!=null&&!ok(e.wk[m][k].reps))e.wk[m][k].reps=''})});
+  }});
+  S.mig16=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -421,7 +430,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 44.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 45.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -474,7 +483,7 @@ function sheetHtml(){
     }).join('')+'</div>';
   h+='<div class="grid3'+(e.plan.shelf?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
     [1,2,3,4].map(function(k){return '<option'+(base.sets===k?' selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+(e.plan.shelf?shelvesField(base.shelves,'shelves'):'')+
-    (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two,'reps',e.plan.trips));
+    (e.plan.setsonly?'<div></div>':e.plan.timed?timeField(base.reps,e.plan.tunit):repsField(base.reps,e.plan.two,'reps',e.plan.trips,e.plan.rl));
   if(e.plan.weighted){
     if(e.plan.hammer){
       var hw=base.weight||'Medium',ho=['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(hw===x?' selected':'')+'>'+x+'</option>'}).join('');
@@ -504,8 +513,8 @@ function shelvesField(cur,f){
   var o=(cur?'':'<option value="" selected>Not set</option>')+['1','2','3'].map(function(x){return '<option value="'+x+'"'+(x===String(cur)?' selected':'')+'>'+x+'</option>'}).join('');
   return '<div class="field"><label for="f-'+f+'">Shelves</label><select id="f-'+f+'" data-a="pf" data-v="'+f+'">'+o+'</select></div>';
 }
-function repsField(cur,two,f,trips){
-  f=f||'reps';var list=trips?['1','2','3','4']:two?['1','2','3','4','5']:['3-5','5-8','8-10','10-12'],o='';
+function repsField(cur,two,f,trips,custom){
+  f=f||'reps';var list=custom?custom:trips?['1','2','3','4']:two?['1','2','3','4','5']:['3-5','5-8','8-10','10-12'],o='';
   if(cur&&list.indexOf(cur)<0)o+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'</option>';
   else if(!cur)o+='<option value="" selected>Not set</option>';
   o+=list.map(function(x){return '<option value="'+x+'"'+(x===cur?' selected':'')+'>'+x+'</option>'}).join('');
