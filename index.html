@@ -384,6 +384,9 @@ var PH = load(PKEY) || {};
     Object.keys(e.wk||{}).forEach(function(m){Object.keys(e.wk[m]||{}).forEach(function(k){fix(e.wk[m][k])})});
   }});
   S.mig29=1; save(KEY,S); })();
+(function(){ if(S.mig30)return;
+  S.ex.forEach(function(e){if(/^tib bar$/i.test(e.name))e.plan.weighted=1});
+  S.mig30=1; save(KEY,S); })();
 function persist(){save(KEY,S)}
 
 /* ---------- dates ---------- */
@@ -533,7 +536,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       '<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>';
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 59.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 60.</div>';
   h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(U.confirm==='log')h+='<div class="empty"><b>Clear all checked sets and history?</b> Your exercises, groups and plans stay as they are. This can\u2019t be undone.<div class="tools"><button class="btn pri" data-a="clearlog">Yes, clear history</button><button class="btn" data-a="clearno">Cancel</button></div></div>';
@@ -545,10 +548,11 @@ function wtMin(e){return /^sled push/i.test(e.name)?100:/^box lift and carry$/i.
 function wtExtra(e){return /^(dumbbell incline bench|champagne press)$/i.test(e.name)?[6,7,8,12]:[]}
 function wtStep(e){return /^med-x lumbar machine$/i.test(e.name)?10:5}
 function wtMax(e){return /^planks$/i.test(e.name)?100:/^med-x core isolator$/i.test(e.name)?100:/^med-x lumbar machine$/i.test(e.name)?350:/^concrete bag transfer$/i.test(e.name)?50:/^twist crunches$/i.test(e.name)?50:/^med-x torso rotation$/i.test(e.name)?60:300}
-function wtOpts(cur,min,extra,step,max){
+function wtOnly(e){return /^tib bar$/i.test(e.name)?[2,5,7,10]:null}
+function wtOpts(cur,min,extra,step,max,only){
   step=step||5;max=max||300;
   var o='<option value="">Not set</option>',c=String(cur==null?'':cur),w,list=[];
-  for(w=min;w<=max;w+=step)list.push(w);
+  if(only)list=only.slice();else for(w=min;w<=max;w+=step)list.push(w);
   (extra||[]).forEach(function(x){if(list.indexOf(x)<0)list.push(x)});
   list.sort(function(a,b){return a-b});
   if(c!==''&&list.indexOf(+c)<0)o+='<option value="'+esc(c)+'" selected>'+esc(c)+' lb</option>';
@@ -588,7 +592,7 @@ function sheetHtml(){
     [1,2,3].forEach(function(k){
       var rf=k===1?'reps':'reps'+k,wf=k===1?'weight':'weight'+k,wid=k===1?'f-w':'f-w'+k;
       h+='<div class="grid3" style="margin-top:'+(k===1?0:8)+'px"><div style="align-self:end;font-weight:700;padding-bottom:14px">Set '+k+'</div>'+repsField(base[rf],false,rf,false,e.plan.rl)+
-        '<div class="field"><label for="'+wid+'">Weight</label><select id="'+wid+'" data-a="pf" data-v="'+wf+'">'+wtOpts(base[wf],wtMin(e),wtExtra(e),wtStep(e),wtMax(e))+'</select></div></div>';
+        '<div class="field"><label for="'+wid+'">Weight</label><select id="'+wid+'" data-a="pf" data-v="'+wf+'">'+wtOpts(base[wf],wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e))+'</select></div></div>';
     });
   } else {
   h+='<div class="grid3'+(e.plan.shelf||(e.plan.hasband&&e.plan.weighted)?' grid4':'')+'"><div class="field"><label for="f-sets">Sets</label><select id="f-sets" data-a="pf" data-v="sets">'+
@@ -599,7 +603,7 @@ function sheetHtml(){
       var hw=base.weight||'Medium',ho=['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(hw===x?' selected':'')+'>'+x+'</option>'}).join('');
       h+='<div class="field"><label for="f-w">Hammer</label><select id="f-w" data-a="pf" data-v="weight">'+ho+'</select></div>';
     } else {
-    var opts=wtOpts(base.weight,wtMin(e),wtExtra(e),wtStep(e),wtMax(e));
+    var opts=wtOpts(base.weight,wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e));
     h+='<div class="field"><label for="f-w">Weight</label><select id="f-w" data-a="pf" data-v="weight">'+opts+'</select></div>';
     }
   } else h+=e.plan.hasband?'':'<div></div>';
@@ -612,7 +616,7 @@ function sheetHtml(){
       var hw2=base.weight2||'Medium',ho2=['Small','Medium','Large'].map(function(x){return '<option value="'+x+'"'+(hw2===x?' selected':'')+'>'+x+'</option>'}).join('');
       h+='<div class="field"><label for="f-w2">Hammer</label><select id="f-w2" data-a="pf" data-v="weight2">'+ho2+'</select></div></div>';
     } else {
-    var opts2=wtOpts(base.weight2,wtMin(e),wtExtra(e),wtStep(e),wtMax(e));
+    var opts2=wtOpts(base.weight2,wtMin(e),wtExtra(e),wtStep(e),wtMax(e),wtOnly(e));
     h+='<div class="field"><label for="f-w2">Weight</label><select id="f-w2" data-a="pf" data-v="weight2">'+opts2+'</select></div></div>';
     }
   }
