@@ -92,6 +92,9 @@ h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;letter-spacing:.01e
 .xrow .tg button{padding:4px 11px;min-height:38px}
 .xrow .tg button.md{margin-left:auto}.xrow .tg button.md~button.md{margin-left:0}
 .xdiv{background:var(--ink);color:var(--bg);border-radius:8px;padding:9px 14px;font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;margin:6px 0 2px}
+.onoff{flex:none;min-width:68px;min-height:42px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:.9rem;margin-left:6px}
+.onoff[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.onoff[disabled]{opacity:.55}
 .xrow.off{background:transparent;border-style:dashed;opacity:.6}
 .xrow.off .nm{color:var(--muted);font-weight:500}
 .dchips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%}
@@ -201,7 +204,7 @@ var RAW = [
 ];
 var WEIGHTED = /barbell|dumbbell|curl|press|row|pulldown|pushdown|deadlift|squat|kettlebell|carry|extension|calf|skull|sled|farmers|suitcase|lunge|bench|clean|snatch|bag|hammer|dips|get ups|lift/i;
 var NOTW = /band|wall sit|plank|hamstring curls\b.*nordic|nordic|clam|bird|flutter|crunch|ab wheel|push-ups|walk/i;
-var FREQ = {daily:'Every day (Mon–Fri)',mwf:'Mon · Wed · Fri',tt:'Tue · Thu',twice:'2× a week, my days',once:'1× a week, my day',off:'Not scheduled'};
+var FREQ = {daily:'Every day (Mon–Fri)',mwf:'Mon · Wed · Fri',tt:'Tue · Thu',twice:'2× a week, my days',once:'1× a week, my day',off:'Off'};
 var LEGACY={daily:[1,2,3,4,5],mwf:[1,3,5],tt:[2,4]};
 var DAYN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -500,6 +503,12 @@ function fixedDays(ex){
   if(!(ex.freq==='daily'||ex.freq==='mwf'||ex.freq==='tt'||ex.freq==='custom'))return [];
   return ex.days||LEGACY[ex.freq]||[];
 }
+var _DEF=null;
+function usualFor(e){
+  var pv=e.prev;if(pv&&pv.freq&&pv.freq!=='off')return pv;
+  _DEF=_DEF||defaults();var d=_DEF.filter(function(x){return x.name===e.name})[0],f=d&&d.freq!=='off'?d.freq:'daily';
+  return {freq:f,days:(LEGACY[f]||[]).slice()};
+}
 function setDays(ex,d){
   d=d.slice().sort();ex.days=d;
   var k=d.join();
@@ -620,8 +629,8 @@ function viewSetup(){
   var h='<div class="top"><h1>Exercises</h1><div class="sub">'+S.ex.length+' total</div></div>';
   h+='<div class="tools"><input type="search" id="q" placeholder="Search exercises" value="'+esc(U.q)+'" aria-label="Search exercises">'+
     '<select class="sel" id="flt" aria-label="Sort by schedule">'+
-    [['all','All'],['daily','Every day'],['mwf','Mon \u00b7 Wed \u00b7 Fri'],['tt','Tue \u00b7 Thu'],['twice','2\u00d7 a week'],['once','Once a week'],['off','Not scheduled']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
-  var xr=function(e){return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+'</div>'};
+    [['all','All'],['daily','Every day'],['mwf','Mon \u00b7 Wed \u00b7 Fri'],['tt','Tue \u00b7 Thu'],['twice','2\u00d7 a week'],['once','Once a week'],['off','Off']].map(function(o){return '<option value="'+o[0]+'"'+(f===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
+  var xr=function(e){return '<div class="xrow'+(e.freq==='off'?' off':'')+'"><button class="nm" data-a="open" data-v="'+e.id+'">'+esc(e.name)+'</button>'+'<button class="onoff" data-a="onoff" data-v="'+e.id+'" aria-pressed="'+(e.freq!=='off')+'"'+(S.admin?'':' disabled')+' aria-label="'+esc(e.name)+(e.freq==='off'?' is off':' is on')+'">'+(e.freq==='off'?'Off':'On')+'</button></div>'};
   var top=f==='all'?list:list.filter(function(e){return e.freq===f}),rest=f==='all'?[]:list.filter(function(e){return e.freq!==f});
   h+='<div class="list">'+(list.length?top.map(xr).join('')+(f==='all'?'':(top.length?'':'<div class="empty">None right now.</div>')+(rest.length?'<div class="xdiv">All other exercises</div>'+rest.map(xr).join(''):'')):'<div class="empty">No exercises match.</div>')+'</div>';
   h+='<div class="tools" style="margin-top:18px">';
@@ -633,7 +642,7 @@ function viewSetup(){
       '<div class="hint" style="margin:0 0 8px">'+(S.lastBackup?'Last backup copied '+new Date(S.lastBackup).toLocaleDateString()+'. ':'No backup copied yet. ')+'Storage protection on this phone: '+(U.persisted===true?'on':U.persisted===false?'off (your phone decides)':'checking')+'.</div><textarea id="bk" aria-label="Backup data" readonly>'+esc(JSON.stringify(S,function(k,v){return k==='admin'?undefined:v}))+'</textarea><div class="tools"><button class="btn" data-a="copy">Copy</button></div>'+
       ''+(S.admin?'<textarea id="rs" placeholder="Paste a backup here" aria-label="Paste backup to restore"></textarea><div class="tools"><button class="btn" data-a="restore">Restore</button><span id="rmsg" class="hint"></span></div>':'<span id="rmsg" class="hint"></span>');
   }
-  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 85.</div>';
+  h+='<div class="hint" style="margin-top:18px">Exercise photos: Free Exercise DB, public domain. App version 86.</div>';
   if(S.admin)h+='<div class="sec"><h2>Start over</h2></div>';
   if(U.note&&S.admin)h+='<div class="hint" role="status" style="margin:0 0 10px">'+esc(U.note)+'</div>';
   if(!S.admin){}
@@ -1029,7 +1038,7 @@ app.addEventListener('click',function(ev){
   if(a==='lbveil'){if(ev.target!==t)return;U.big=null;return render()}
   if(a==='veil'){if(ev.target!==t)return;U.open=null;U._sheetScroll=0;return render()}
   if(t.tagName==='SELECT'||t.tagName==='INPUT')return;
-  if(!S.admin&&/^(rmask|rmgo|add|addgo|clearask|clearlog|clearall|restore|scope|target|resetday|sd|sm)$/.test(a))return;
+  if(!S.admin&&/^(rmask|rmgo|onoff|add|addgo|clearask|clearlog|clearall|restore|scope|target|resetday|sd|sm)$/.test(a))return;
   if(a==='admask'){U.askAdmin=true;U.admBad=false;render();var ac=document.getElementById('admcode');if(ac)ac.focus();return}
   if(a==='admno'){U.askAdmin=false;U.admBad=false;return render()}
   if(a==='admgo'){var cv=document.getElementById('admcode').value.trim();if(cv==='1122'){S.admin=1;U.askAdmin=false;U.admBad=false;persist()}else U.admBad=true;return render()}
@@ -1090,6 +1099,7 @@ app.addEventListener('click',function(ev){
   else if(a==='skip'){var se=byId(v);if(se&&checked(U.date,v)===0){S.skip=S.skip||{};S.skip[U.date]=S.skip[U.date]||{};S.skip[U.date][v]=1;persist();render()}}
   else if(a==='unskip'){if(S.skip&&S.skip[U.date]){delete S.skip[U.date][v];if(!Object.keys(S.skip[U.date]).length)delete S.skip[U.date]}persist();render()}
   else if(a==='leftsort'){U.leftSort=!U.leftSort;render()}
+  else if(a==='onoff'){var oe=byId(v);if(oe){if(oe.freq==='off'){var us=usualFor(oe);oe.freq=us.freq;oe.days=(us.days||[]).slice();delete oe.prev}else{oe.prev={freq:oe.freq,days:(oe.days||[]).slice()};oe.freq='off';oe.days=[]}persist();render()}}
   else if(a==='rmask'){U.rmId=v;render()}
   else if(a==='rmno'){U.rmId=null;render()}
   else if(a==='rmgo'){var re=byId(v);re.freq='off';re.days=[];U.rmId=null;persist();render()}
